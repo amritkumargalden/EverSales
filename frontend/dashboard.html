@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard - EverSales</title>
+    <link rel="stylesheet" href="assets/css/style.css">
+</head>
+<body>
+    <nav class="navbar">
+        <div class="container">
+            <h1 class="logo">EverSales</h1>
+            <div class="nav-right">
+                <a href="index.html" class="nav-link">Products</a>
+                <a href="dashboard.html" class="nav-link active">My Orders</a>
+                <button onclick="logout()" class="btn-logout">Logout</button>
+            </div>
+        </div>
+    </nav>
+    
+    <div class="container">
+        <div id="message" class="message"></div>
+        
+        <div class="tabs">
+            <button class="tab-button active" onclick="switchTab('orders')">My Orders</button>
+            <button class="tab-button" id="adminTab" onclick="switchTab('admin')" style="display: none;">Admin Dashboard</button>
+        </div>
+        
+        <!-- My Orders Tab -->
+        <div id="ordersTab" class="tab-content active">
+            <h2>Order History</h2>
+            <div id="ordersContainer" class="orders-container">
+                <!-- Orders will be loaded here -->
+            </div>
+        </div>
+        
+        <!-- Admin Dashboard Tab -->
+        <div id="adminTab" class="tab-content hidden">
+            <h2>Admin Dashboard</h2>
+            
+            <!-- Statistics -->
+            <div id="statsContainer" class="stats-container">
+                <!-- Stats will be loaded here -->
+            </div>
+            
+            <!-- Users List -->
+            <h3>Users List</h3>
+            <div id="usersContainer" class="list-container">
+                <!-- Users will be loaded here -->
+            </div>
+            
+            <!-- All Orders -->
+            <h3>All Orders</h3>
+            <div id="allOrdersContainer" class="list-container">
+                <!-- Orders will be loaded here -->
+            </div>
+        </div>
+    </div>
+    
+    <script src="assets/js/api.js"></script>
+    <script src="assets/js/auth.js"></script>
+    <script src="assets/js/orders.js"></script>
+    <script src="assets/js/admin.js"></script>
+    <script>
+        /**
+         * Switch between tabs
+         */
+        function switchTab(tabName) {
+            // Hide all tabs
+            document.querySelectorAll('.tab-content').forEach(tab => {
+                tab.classList.add('hidden');
+            });
+            
+            // Remove active class from all buttons
+            document.querySelectorAll('.tab-button').forEach(btn => {
+                btn.classList.remove('active');
+            });
+            
+            // Show selected tab and mark button as active
+            const tabId = tabName === 'admin' ? 'adminTab' : 'ordersTab';
+            const tabElement = document.getElementById(tabId);
+            if (tabElement) {
+                tabElement.classList.remove('hidden');
+            }
+            
+            event.target.classList.add('active');
+        }
+        
+        /**
+         * Initialize dashboard on page load
+         */
+        document.addEventListener('DOMContentLoaded', async () => {
+            await requireAuth();
+            
+            // Load user orders
+            loadOrders();
+            
+            // Check if user is admin
+            const user = await getCurrentUser();
+            if (user && user.role === 'admin') {
+                document.getElementById('adminTab').style.display = 'inline-block';
+            }
+        });
+    </script>
+</body>
+</html>

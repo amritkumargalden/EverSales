@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Products - EverSales</title>
+    <link rel="stylesheet" href="assets/css/style.css">
+</head>
+<body>
+    <nav class="navbar">
+        <div class="container">
+            <h1 class="logo">EverSales</h1>
+            <div class="nav-right">
+                <input type="text" id="searchInput" placeholder="Search products...">
+                <button onclick="searchProducts()">Search</button>
+                <a href="index.html" class="nav-link">Products</a>
+                <a href="#" onclick="showCart()" class="nav-link">Cart</a>
+                <a href="dashboard.html" class="nav-link">My Orders</a>
+                <button onclick="logout()" class="btn-logout">Logout</button>
+            </div>
+        </div>
+    </nav>
+    
+    <div class="container">
+        <div id="message" class="message"></div>
+        
+        <div class="main-content">
+            <!-- Products Grid -->
+            <div class="products-section">
+                <h2>Available Products</h2>
+                <div id="productsContainer" class="products-grid">
+                    <!-- Products will be loaded here -->
+                </div>
+            </div>
+            
+            <!-- Shopping Cart Sidebar -->
+            <div id="cartSidebar" class="cart-sidebar hidden">
+                <div class="cart-header">
+                    <h3>Shopping Cart</h3>
+                    <button onclick="closeCart()" class="close-btn">✕</button>
+                </div>
+                <div id="cartContainer" class="cart-items">
+                    <!-- Cart items will be loaded here -->
+                </div>
+                <div class="cart-footer">
+                    <p><strong>Total: <span id="cartTotal">₹0.00</span></strong></p>
+                    <button onclick="checkout()" class="btn-checkout">Checkout</button>
+                    <button onclick="clearCart()" class="btn-secondary">Clear Cart</button>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Admin Panel (hidden by default) -->
+    <div id="adminPanel" class="admin-panel hidden">
+        <h2>Admin Panel</h2>
+        <div class="admin-forms">
+            <h3>Add New Product</h3>
+            <form onsubmit="createProduct(); return false;">
+                <input type="text" id="productName" placeholder="Product Name" required>
+                <input type="text" id="productDescription" placeholder="Description">
+                <input type="number" id="productPrice" placeholder="Price" step="0.01" required>
+                <input type="number" id="productStock" placeholder="Stock Quantity" required>
+                <button type="submit" class="btn-primary">Create Product</button>
+            </form>
+        </div>
+    </div>
+    
+    <script src="assets/js/api.js"></script>
+    <script src="assets/js/auth.js"></script>
+    <script src="assets/js/products.js"></script>
+    <script src="assets/js/cart.js"></script>
+    <script>
+        /**
+         * Show shopping cart sidebar
+         */
+        function showCart() {
+            document.getElementById('cartSidebar').classList.remove('hidden');
+            loadCart();
+        }
+        
+        /**
+         * Close shopping cart sidebar
+         */
+        function closeCart() {
+            document.getElementById('cartSidebar').classList.add('hidden');
+        }
+        
+        /**
+         * Load page on document ready
+         */
+        document.addEventListener('DOMContentLoaded', async () => {
+            await requireAuth();
+            
+            // Load products
+            loadProducts();
+            
+            // Check if user is admin and show admin panel
+            const user = await getCurrentUser();
+            if (user && user.role === 'admin') {
+                document.getElementById('adminPanel').classList.remove('hidden');
+            }
+        });
+    </script>
+</body>
+</html>
