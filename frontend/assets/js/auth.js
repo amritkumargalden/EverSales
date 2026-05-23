@@ -52,7 +52,6 @@ async function adminLogin(email, password) {
                 return;
             }
 
-            // Store user info in localStorage
             localStorage.setItem('user_id', data.user.id);
             localStorage.setItem('user_email', data.user.email);
             localStorage.setItem('user_name', data.user.full_name);
@@ -76,13 +75,21 @@ async function adminLogin(email, password) {
  * Protect a page - redirect to login if not logged in
  */
 document.addEventListener('DOMContentLoaded', async () => {
-    // Check if current page requires authentication
     const currentPage = window.location.pathname.split('/').pop() || 'index.html';
 
     if (currentPage === 'admin-dashboard.html') {
         await requireAdminAuth();
     } else if (currentPage === 'admin-login.html') {
-        // Already handled in admin-login.html script
+        const user = getCurrentUser();
+        if (user.role === 'admin') {
+            window.location.href = 'admin-dashboard.html';
+        } else if (user.role) {
+            localStorage.removeItem('user_id');
+            localStorage.removeItem('user_email');
+            localStorage.removeItem('user_name');
+            localStorage.removeItem('user_role');
+            localStorage.removeItem('auth_token');
+        }
     } else {
         const protectedPages = ['dashboard.html', 'index.html'];
         if (protectedPages.includes(currentPage)) {
