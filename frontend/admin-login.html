@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Login - EverSales</title>
+    <link rel="stylesheet" href="assets/css/style.css">
+</head>
+<body class="auth-page theme-primary">
+    <div class="container">
+        <div class="auth-container">
+            <h1>EverSales Admin</h1>
+            <p class="subtitle">Restricted to administrators only</p>
+
+            <div id="message" class="message"></div>
+
+            <!-- Admin Login Form -->
+            <form id="adminLoginForm" class="auth-form" onsubmit="handleAdminLogin(event)">
+                <h2>Admin Portal Login</h2>
+
+                <div class="form-group">
+                    <label for="adminEmail">Email</label>
+                    <input type="email" id="adminEmail" name="email" required>
+                </div>
+
+                <div class="form-group">
+                    <label for="adminPassword">Password</label>
+                    <input type="password" id="adminPassword" name="password" required>
+                </div>
+
+                <button type="submit" class="btn-primary">Admin Login</button>
+            </form>
+
+            <div class="admin-access-note">
+                <span>Are you a regular user?</span>
+                <a href="login.html">Go to User Login</a>
+            </div>
+        </div>
+    </div>
+
+    <script src="assets/js/api.js?v=20260523"></script>
+    <script src="assets/js/auth.js?v=20260523"></script>
+    <script src="assets/js/validate.js"></script>
+    <script>
+        /**
+         * Handle admin login form submission
+         */
+        function handleAdminLogin(event) {
+            event.preventDefault();
+            const email = document.getElementById('adminEmail').value;
+            const password = document.getElementById('adminPassword').value;
+            if (!validateLoginFields(email, password)) return;
+            adminLogin(email, password);
+        }
+
+        /**
+         * Check if already logged in as admin on page load
+         */
+        document.addEventListener('DOMContentLoaded', async () => {
+            const user = getCurrentUser();
+            if (user.role === 'admin') {
+                window.location.href = 'admin-dashboard.html';
+            } else if (user.role) {
+                // User is logged in but not admin
+                localStorage.removeItem('user_id');
+                localStorage.removeItem('user_email');
+                localStorage.removeItem('user_name');
+                localStorage.removeItem('user_role');
+                localStorage.removeItem('auth_token');
+            }
+        });
+    </script>
+</body>
+</html>
