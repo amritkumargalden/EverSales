@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Dashboard - EverSales</title>
+    <link rel="stylesheet" href="assets/css/style.css">
+</head>
+<body class="theme-reverse">
+    <nav class="navbar">
+        <div class="container">
+            <h1 class="logo">EverSales Admin</h1>
+            <div class="nav-right">
+                <span class="admin-badge">Admin Panel</span>
+                <a href="index.html" class="nav-link">Storefront</a>
+                <button onclick="logout()" class="btn-logout">Logout</button>
+            </div>
+        </div>
+    </nav>
+
+    <main class="container admin-dashboard">
+        <div id="message" class="message"></div>
+
+        <section class="admin-hero">
+            <div>
+                <p class="eyebrow">Marketplace Control Center</p>
+                <h2>Admin Dashboard</h2>
+                <p>Manage users, sellers, products, orders, homepage banners, and sales performance from one place.</p>
+            </div>
+            <button class="btn-secondary admin-refresh-btn" onclick="loadAdminDashboard()">Refresh Data</button>
+        </section>
+
+        <section id="adminStats" class="stats-container"></section>
+
+        <div class="admin-layout">
+            <aside class="admin-sidebar">
+                <button class="admin-nav active" onclick="switchAdminSection('users', this)">User Management</button>
+                <button class="admin-nav" onclick="switchAdminSection('sellers', this)">Seller Management</button>
+                <button class="admin-nav" onclick="switchAdminSection('products', this)">Product Moderation</button>
+                <button class="admin-nav" onclick="switchAdminSection('orders', this)">Order Overview</button>
+                <button class="admin-nav" onclick="switchAdminSection('banners', this)">Banner Management</button>
+                <button class="admin-nav" onclick="switchAdminSection('reports', this)">Sales Reports</button>
+            </aside>
+
+            <section class="admin-main">
+                <div id="usersSection" class="admin-section active">
+                    <div class="section-heading">
+                        <h3>User Management</h3>
+                        <p>Review customers and update account roles.</p>
+                    </div>
+                    <div id="adminUsers" class="list-container"></div>
+                </div>
+
+                <div id="sellersSection" class="admin-section hidden">
+                    <div class="section-heading">
+                        <h3>Seller Management</h3>
+                        <p>Track sellers, catalog size, stock, and sales volume.</p>
+                    </div>
+                    <div id="adminSellers" class="list-container"></div>
+                </div>
+
+                <div id="productsSection" class="admin-section hidden">
+                    <div class="section-heading">
+                        <h3>Product Moderation</h3>
+                        <p>Approve, reject, or review products before they appear confidently in the marketplace.</p>
+                    </div>
+                    <div id="adminProducts" class="list-container"></div>
+                </div>
+
+                <div id="ordersSection" class="admin-section hidden">
+                    <div class="section-heading">
+                        <h3>Order Overview</h3>
+                        <p>Monitor all customer orders and update fulfillment status.</p>
+                    </div>
+                    <div id="adminOrders" class="list-container"></div>
+                </div>
+
+                <div id="bannersSection" class="admin-section hidden">
+                    <div class="section-heading">
+                        <h3>Banner Management</h3>
+                        <p>Create homepage campaign banners for sales, launches, and seasonal promotions.</p>
+                    </div>
+                    <form id="bannerForm" class="admin-form-grid" onsubmit="saveBanner(event)">
+                        <input type="hidden" id="bannerId">
+                        <div class="form-group">
+                            <label for="bannerTitle">Title</label>
+                            <input type="text" id="bannerTitle" required placeholder="Flash Sale Weekend">
+                        </div>
+                        <div class="form-group">
+                            <label for="bannerSubtitle">Subtitle</label>
+                            <input type="text" id="bannerSubtitle" placeholder="Up to 50% off selected products">
+                        </div>
+                        <div class="form-group">
+                            <label for="bannerImage">Image URL</label>
+                            <input type="url" id="bannerImage" placeholder="https://example.com/banner.jpg">
+                        </div>
+                        <div class="form-group">
+                            <label for="bannerTarget">Target URL</label>
+                            <input type="text" id="bannerTarget" placeholder="index.html">
+                        </div>
+                        <div class="form-group">
+                            <label for="bannerOrder">Sort Order</label>
+                            <input type="number" id="bannerOrder" value="0">
+                        </div>
+                        <label class="check-row">
+                            <input type="checkbox" id="bannerActive" checked>
+                            Active banner
+                        </label>
+                        <button type="submit" class="btn-primary">Save Banner</button>
+                        <button type="button" class="btn-secondary" onclick="resetBannerForm()">Clear</button>
+                    </form>
+                    <div id="adminBanners" class="list-container"></div>
+                </div>
+
+                <div id="reportsSection" class="admin-section hidden">
+                    <div class="section-heading">
+                        <h3>Sales Reports</h3>
+                        <p>Understand revenue, order volume, top products, and seller contribution.</p>
+                    </div>
+                    <div id="adminReports"></div>
+                </div>
+            </section>
+        </div>
+    </main>
+
+    <script src="assets/js/api.js?v=20260523"></script>
+    <script src="assets/js/auth.js?v=20260523"></script>
+    <script src="assets/js/admin.js?v=20260523"></script>
+</body>
+</html>

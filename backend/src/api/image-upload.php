@@ -57,9 +57,13 @@ function handleProductImageUpload() {
     $user_id = $_SESSION['user_id'];
     $file = $_FILES['image'];
 
-    // Validate file
+    // Validate file using the actual uploaded content, not only browser-provided metadata.
     $allowed_types = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp', 'image/gif'];
-    if (!in_array($file['type'], $allowed_types)) {
+    $finfo = finfo_open(FILEINFO_MIME_TYPE);
+    $detected_type = finfo_file($finfo, $file['tmp_name']);
+    finfo_close($finfo);
+
+    if (!in_array($detected_type, $allowed_types, true)) {
         http_response_code(400);
         echo json_encode(['success' => false, 'message' => 'Invalid image format']);
         return;
@@ -89,21 +93,35 @@ function handleProductImageUpload() {
         mkdir($uploads_dir, 0755, true);
     }
 
-    // Load and compress image
-    $compressed = compressImage($file['tmp_name'], $file['type']);
-    if (!$compressed) {
+    // Compress when GD is available; otherwise keep the original upload.
+    $imageBinary = compressImage($file['tmp_name'], $detected_type);
+    $saved_type = 'image/jpeg';
+    $extension = 'jpg';
+
+    if (!$imageBinary) {
+        $imageBinary = file_get_contents($file['tmp_name']);
+        $saved_type = $detected_type;
+        $extension = match ($detected_type) {
+            'image/png' => 'png',
+            'image/webp' => 'webp',
+            'image/gif' => 'gif',
+            default => 'jpg'
+        };
+    }
+
+    if (!$imageBinary) {
         http_response_code(400);
         echo json_encode(['success' => false, 'message' => 'Failed to process image']);
         return;
     }
 
     // Generate unique filename
-    $filename = 'product_' . $product_id . '_' . time() . '_' . bin2hex(random_bytes(4)) . '.jpg';
+    $filename = 'product_' . $product_id . '_' . time() . '_' . bin2hex(random_bytes(4)) . '.' . $extension;
     $filepath = $uploads_dir . '/' . $filename;
     $relative_path = 'uploads/products/' . $filename;
 
-    // Save compressed image
-    if (!file_put_contents($filepath, $compressed)) {
+    // Save image
+    if (!file_put_contents($filepath, $imageBinary)) {
         http_response_code(500);
         echo json_encode(['success' => false, 'message' => 'Failed to save image']);
         return;
@@ -111,12 +129,12 @@ function handleProductImageUpload() {
 
     $original_size = $file['size'];
     $compressed_size = filesize($filepath);
-    $compression_ratio = round((1 - ($compressed_size / $original_size)) * 100, 2);
+    $compression_ratio = $original_size > 0 ? round((1 - ($compressed_size / $original_size)) * 100, 2) : 0;
 
     // Save to database
     $query = "INSERT INTO product_images (product_id, image_name, image_path, image_size, image_type) 
               VALUES ($product_id, '" . $db->escape(basename($file['name'])) . "', 
-                      '" . $db->escape($relative_path) . "', $compressed_size, 'image/jpeg')";
+                      '" . $db->escape($relative_path) . "', $compressed_size, '" . $db->escape($saved_type) . "')";
     
     if (!$db->execute($query)) {
         unlink($filepath); // Delete file if DB save fails

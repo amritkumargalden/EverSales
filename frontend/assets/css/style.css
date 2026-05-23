@@ -245,6 +245,40 @@ body.auth-page.theme-reverse {
     font-size: 2rem;
 }
 
+.admin-access-note {
+    margin-top: 1.5rem;
+    padding-top: 1rem;
+    border-top: 1px solid rgba(255, 255, 255, 0.2);
+    text-align: center;
+    color: rgba(255, 255, 255, 0.84);
+    font-size: 0.95rem;
+}
+
+.admin-access-note a {
+    color: #fff;
+    font-weight: 700;
+    margin-left: 0.35rem;
+    text-decoration: underline;
+    text-underline-offset: 3px;
+}
+
+.auth-container .subtitle {
+    text-align: center;
+    color: rgba(255, 255, 255, 0.84);
+    margin-bottom: 1.5rem;
+    font-size: 0.95rem;
+}
+
+.admin-badge {
+    background: linear-gradient(135deg, #564A96, #B75F67);
+    color: white;
+    padding: 0.4rem 0.8rem;
+    border-radius: 20px;
+    font-size: 0.85rem;
+    font-weight: 600;
+    margin-right: 1rem;
+}
+
 .form-toggle {
     display: flex;
     gap: 1rem;
@@ -741,6 +775,7 @@ table tbody tr:hover {
     padding: 1rem;
     border-radius: 8px;
     margin: 1rem 0;
+    overflow-x: auto;
 }
 
 .orders-container {
@@ -844,5 +879,259 @@ table tbody tr:hover {
 
 .empty-state a:hover {
     text-decoration: underline;
+}
+
+/* Dedicated Admin Dashboard */
+.admin-dashboard {
+    padding-top: 2rem;
+    padding-bottom: 3rem;
+}
+
+.admin-hero {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 1.5rem;
+    background: white;
+    border-radius: 8px;
+    padding: 1.5rem;
+    box-shadow: 0 2px 10px rgba(22, 18, 44, 0.08);
+}
+
+.admin-hero h2 {
+    margin: 0.25rem 0 0.5rem;
+    color: #2c3e50;
+}
+
+.admin-hero p {
+    color: #66717d;
+    max-width: 720px;
+}
+
+.eyebrow {
+    color: #ff6b6b;
+    font-size: 0.8rem;
+    font-weight: 700;
+    text-transform: uppercase;
+}
+
+.admin-refresh-btn {
+    width: auto;
+    min-width: 140px;
+    margin-top: 0;
+}
+
+.admin-layout {
+    display: grid;
+    grid-template-columns: 240px minmax(0, 1fr);
+    gap: 1.25rem;
+    align-items: start;
+}
+
+.admin-sidebar {
+    background: white;
+    border-radius: 8px;
+    padding: 0.75rem;
+    box-shadow: 0 2px 10px rgba(22, 18, 44, 0.08);
+    position: sticky;
+    top: 96px;
+}
+
+.admin-nav {
+    width: 100%;
+    text-align: left;
+    border: 0;
+    background: transparent;
+    color: #4f5d6b;
+    padding: 0.85rem 1rem;
+    border-radius: 6px;
+    cursor: pointer;
+    font-weight: 600;
+}
+
+.admin-nav:hover,
+.admin-nav.active {
+    background: #fff0f0;
+    color: #ff6b6b;
+}
+
+.admin-main {
+    min-width: 0;
+}
+
+.admin-section {
+    background: white;
+    border-radius: 8px;
+    padding: 1.25rem;
+    box-shadow: 0 2px 10px rgba(22, 18, 44, 0.08);
+}
+
+.section-heading {
+    margin-bottom: 1rem;
+}
+
+.section-heading h3 {
+    color: #2c3e50;
+    margin-bottom: 0.25rem;
+}
+
+.section-heading p,
+td small {
+    display: block;
+    color: #7f8c8d;
+    margin-top: 0.25rem;
+}
+
+.admin-form-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 1rem;
+    background: #f8f9fa;
+    padding: 1rem;
+    border-radius: 8px;
+    margin-bottom: 1rem;
+}
+
+.admin-form-grid .btn-primary,
+.admin-form-grid .btn-secondary {
+    margin-top: 0;
+}
+
+.check-row {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    color: #4f5d6b;
+    font-weight: 600;
+}
+
+.action-row {
+    display: flex;
+    gap: 0.5rem;
+    flex-wrap: wrap;
+}
+
+.mini-btn {
+    border: 0;
+    border-radius: 4px;
+    padding: 0.45rem 0.65rem;
+    cursor: pointer;
+    background: #ecf0f1;
+    color: #2c3e50;
+    font-weight: 600;
+}
+
+.mini-btn.approve {
+    background: #d4edda;
+    color: #155724;
+}
+
+.mini-btn.reject {
+    background: #f8d7da;
+    color: #721c24;
+}
+
+.mini-btn.pending {
+    background: #fff3cd;
+    color: #856404;
+}
+
+.status.admin,
+.status.seller,
+.status.customer,
+.status.approved,
+.status.rejected {
+    text-transform: capitalize;
+}
+
+.status.admin {
+    background: #d1ecf1;
+    color: #0c5460;
+}
+
+.status.seller,
+.status.approved {
+    background: #d4edda;
+    color: #155724;
+}
+
+.status.customer {
+    background: #e2e3e5;
+    color: #383d41;
+}
+
+.status.rejected {
+    background: #f8d7da;
+    color: #721c24;
+}
+
+.banner-admin-card {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 1rem;
+    padding: 1rem;
+    border: 1px solid #ecf0f1;
+    border-radius: 8px;
+    margin-bottom: 0.75rem;
+}
+
+.banner-admin-card p {
+    color: #66717d;
+    margin: 0.25rem 0;
+}
+
+.banner-admin-card small {
+    color: #7f8c8d;
+}
+
+.report-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 1rem;
+}
+
+.report-card {
+    border: 1px solid #ecf0f1;
+    border-radius: 8px;
+    padding: 1rem;
+    background: #f8f9fa;
+}
+
+.report-card h4 {
+    color: #2c3e50;
+    margin-bottom: 0.75rem;
+}
+
+.report-card p {
+    color: #59636e;
+    margin-bottom: 0.5rem;
+}
+
+.empty-admin {
+    text-align: center;
+    color: #7f8c8d;
+    padding: 1rem;
+}
+
+@media (max-width: 900px) {
+    .admin-layout {
+        grid-template-columns: 1fr;
+    }
+
+    .admin-sidebar {
+        position: static;
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .admin-hero {
+        align-items: stretch;
+        flex-direction: column;
+    }
+
+    .admin-form-grid {
+        grid-template-columns: 1fr;
+    }
 }
 

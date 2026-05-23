@@ -21,6 +21,7 @@ create table products(
     wholesale_price decimal(10,2) not null,
     min_wholesale_qty int not null default 5,
     stock int not null,
+    product_status enum('pending', 'approved', 'rejected') not null default 'pending',
     created_at timestamp default current_timestamp,
     updated_at timestamp default current_timestamp on update current_timestamp,
     foreign key (seller_id) references users(id)
@@ -80,4 +81,16 @@ create table payments(
     created_at timestamp default current_timestamp,
     updated_at timestamp default current_timestamp on update current_timestamp,
     foreign key (order_id) references orders(order_id)
+);
+
+create table banners(
+    banner_id int auto_increment primary key,
+    title varchar(255) not null,
+    subtitle varchar(255),
+    image_url varchar(500),
+    target_url varchar(500),
+    is_active tinyint(1) not null default 1,
+    sort_order int not null default 0,
+    created_at timestamp default current_timestamp,
+    updated_at timestamp default current_timestamp on update current_timestamp
 );

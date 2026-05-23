@@ -15,6 +15,7 @@
                 <a href="index.html" class="nav-link">Products</a>
                 <a href="#" onclick="showCart()" class="nav-link">Cart</a>
                 <a href="dashboard.html" class="nav-link">My Orders</a>
+                <a id="adminLink" href="admin-dashboard.html" class="nav-link" style="display:none;color:#fff;font-weight:bold;">Admin Panel</a>
                 <a id="sellerLink" href="seller-dashboard.html" class="nav-link" style="display:none;color:#28a745;font-weight:bold;">Seller Dashboard</a>
                 <button id="becomeSeller" onclick="becomeSeller()" class="btn-secondary" style="display:none;">Become Seller</button>
                 <button onclick="logout()" class="btn-logout">Logout</button>
@@ -108,9 +109,14 @@
             const user = getCurrentUser();
             const sellerActionLink = document.getElementById('sellerActionLink');
             const becomeSeller = document.getElementById('becomeSeller');
+            const adminLink = document.getElementById('adminLink');
 
             if (user && user.role === 'seller') {
                 if (sellerActionLink) sellerActionLink.style.display = 'inline-block';
+                if (becomeSeller) becomeSeller.style.display = 'none';
+            } else if (user && user.role === 'admin') {
+                if (adminLink) adminLink.style.display = 'inline-block';
+                if (sellerActionLink) sellerActionLink.style.display = 'none';
                 if (becomeSeller) becomeSeller.style.display = 'none';
             } else if (user && user.role === 'customer') {
                 if (sellerActionLink) sellerActionLink.style.display = 'none';

@@ -118,6 +118,7 @@ function handleAddProduct($database) {
     }
 
     $seller_id = $_SESSION['user_id'];
+    ensureProductModerationColumn($database);
     $name = trim($_POST['name'] ?? '');
     $description = trim($_POST['description'] ?? '');
     $price = floatval($_POST['price'] ?? 0);
@@ -134,7 +135,7 @@ function handleAddProduct($database) {
     }
 
     // Insert product
-    $stmt = $database->prepare("INSERT INTO products (seller_id, name, description, price, wholesale_price, min_wholesale_qty, stock) VALUES (?, ?, ?, ?, ?, ?, ?)");
+    $stmt = $database->prepare("INSERT INTO products (seller_id, name, description, price, wholesale_price, min_wholesale_qty, stock, product_status) VALUES (?, ?, ?, ?, ?, ?, ?, 'pending')");
     if (!$stmt) {
         http_response_code(500);
         echo json_encode(['success' => false, 'message' => 'Failed to prepare product statement']);
@@ -162,51 +163,55 @@ function handleAddProduct($database) {
         }
     }
 
-    if (isset($_FILES['images']) && is_array($_FILES['images']['name']) && !empty($_FILES['images']['name'][0])) {
+    $imageFiles = normalizeUploadedImages($_FILES['images'] ?? null);
+
+    if (!empty($imageFiles)) {
         $allowed_types = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/webp'];
         $max_images = 5;
         $image_count = 0;
 
-        for ($i = 0; $i < count($_FILES['images']['name']) && $image_count < $max_images; $i++) {
-            // Skip if no file at this index
-            if (empty($_FILES['images']['name'][$i])) {
+        foreach ($imageFiles as $imageFile) {
+            if ($image_count >= $max_images) {
+                break;
+            }
+
+            if (empty($imageFile['name'])) {
                 continue;
             }
 
-            // Check for upload errors
-            if ($_FILES['images']['error'][$i] !== UPLOAD_ERR_OK) {
-                error_log("Upload error for file $i: " . $_FILES['images']['error'][$i]);
+            if ($imageFile['error'] !== UPLOAD_ERR_OK) {
+                error_log("Upload error for file " . $imageFile['name'] . ": " . $imageFile['error']);
                 continue;
             }
 
             // Get MIME type using finfo instead of deprecated mime_content_type
             $finfo = finfo_open(FILEINFO_MIME_TYPE);
-            $file_type = finfo_file($finfo, $_FILES['images']['tmp_name'][$i]);
+            $file_type = finfo_file($finfo, $imageFile['tmp_name']);
             finfo_close($finfo);
 
             if (!in_array($file_type, $allowed_types)) {
-                error_log("Invalid file type: $file_type for file " . $_FILES['images']['name'][$i]);
+                error_log("Invalid file type: $file_type for file " . $imageFile['name']);
                 continue;
             }
 
-            $file_size = $_FILES['images']['size'][$i];
+            $file_size = $imageFile['size'];
             if ($file_size > 5242880) { // 5MB limit per file
-                error_log("File too large: " . $_FILES['images']['name'][$i] . " (" . $file_size . " bytes)");
+                error_log("File too large: " . $imageFile['name'] . " (" . $file_size . " bytes)");
                 continue;
             }
 
             // Generate unique filename
-            $extension = strtolower(pathinfo($_FILES['images']['name'][$i], PATHINFO_EXTENSION));
+            $extension = strtolower(pathinfo($imageFile['name'], PATHINFO_EXTENSION));
             $file_name = 'product_' . $product_id . '_' . time() . '_' . bin2hex(random_bytes(4)) . '.' . $extension;
             $file_path = $uploads_dir . $file_name;
 
             // Move uploaded file
-            if (move_uploaded_file($_FILES['images']['tmp_name'][$i], $file_path)) {
+            if (move_uploaded_file($imageFile['tmp_name'], $file_path)) {
                 // Store image metadata in database
                 $img_stmt = $database->prepare("INSERT INTO product_images (product_id, image_name, image_path, image_size, image_type) VALUES (?, ?, ?, ?, ?)");
                 if ($img_stmt) {
                     $relative_path = 'uploads/products/' . $file_name;
-                    $img_stmt->bind_param('issis', $product_id, $_FILES['images']['name'][$i], $relative_path, $file_size, $file_type);
+                    $img_stmt->bind_param('issis', $product_id, $imageFile['name'], $relative_path, $file_size, $file_type);
                     if ($img_stmt->execute()) {
                         $uploadedImages[] = $relative_path;
                         $image_count++;
@@ -216,7 +221,7 @@ function handleAddProduct($database) {
                     $img_stmt->close();
                 }
             } else {
-                error_log("Failed to move uploaded file: " . $_FILES['images']['tmp_name'][$i] . " to " . $file_path);
+                error_log("Failed to move uploaded file: " . $imageFile['tmp_name'] . " to " . $file_path);
             }
         }
     }
@@ -228,6 +233,35 @@ function handleAddProduct($database) {
         'images_uploaded' => count($uploadedImages),
         'images' => $uploadedImages
     ]);
+}
+
+function ensureProductModerationColumn($database) {
+    $column = $database->query("SHOW COLUMNS FROM products LIKE 'product_status'");
+    if ($column instanceof mysqli_result && $column->num_rows === 0) {
+        $database->execute("ALTER TABLE products ADD COLUMN product_status ENUM('pending', 'approved', 'rejected') NOT NULL DEFAULT 'approved'");
+    }
+}
+
+function normalizeUploadedImages($files) {
+    if (!$files || !isset($files['name'])) {
+        return [];
+    }
+
+    if (is_array($files['name'])) {
+        $normalized = [];
+        foreach ($files['name'] as $index => $name) {
+            $normalized[] = [
+                'name' => $name,
+                'type' => $files['type'][$index] ?? '',
+                'tmp_name' => $files['tmp_name'][$index] ?? '',
+                'error' => $files['error'][$index] ?? UPLOAD_ERR_NO_FILE,
+                'size' => $files['size'][$index] ?? 0
+            ];
+        }
+        return $normalized;
+    }
+
+    return [$files];
 }
 
 /**
@@ -326,44 +360,50 @@ function handleUpdateProduct($database) {
 
     $max_new_images = max(0, 5 - $existing_image_count);
 
-    if ($max_new_images > 0 && isset($_FILES['images']) && is_array($_FILES['images']['name']) && !empty($_FILES['images']['name'][0])) {
+    $imageFiles = normalizeUploadedImages($_FILES['images'] ?? null);
+
+    if ($max_new_images > 0 && !empty($imageFiles)) {
         $allowed_types = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/webp'];
         $image_count = 0;
 
-        for ($i = 0; $i < count($_FILES['images']['name']) && $image_count < $max_new_images; $i++) {
-            if (empty($_FILES['images']['name'][$i])) {
+        foreach ($imageFiles as $imageFile) {
+            if ($image_count >= $max_new_images) {
+                break;
+            }
+
+            if (empty($imageFile['name'])) {
                 continue;
             }
 
-            if ($_FILES['images']['error'][$i] !== UPLOAD_ERR_OK) {
-                error_log("Upload error for file $i: " . $_FILES['images']['error'][$i]);
+            if ($imageFile['error'] !== UPLOAD_ERR_OK) {
+                error_log("Upload error for file " . $imageFile['name'] . ": " . $imageFile['error']);
                 continue;
             }
 
             $finfo = finfo_open(FILEINFO_MIME_TYPE);
-            $file_type = finfo_file($finfo, $_FILES['images']['tmp_name'][$i]);
+            $file_type = finfo_file($finfo, $imageFile['tmp_name']);
             finfo_close($finfo);
 
             if (!in_array($file_type, $allowed_types)) {
-                error_log("Invalid file type: $file_type for file " . $_FILES['images']['name'][$i]);
+                error_log("Invalid file type: $file_type for file " . $imageFile['name']);
                 continue;
             }
 
-            $file_size = $_FILES['images']['size'][$i];
+            $file_size = $imageFile['size'];
             if ($file_size > 5242880) {
-                error_log("File too large: " . $_FILES['images']['name'][$i] . " (" . $file_size . " bytes)");
+                error_log("File too large: " . $imageFile['name'] . " (" . $file_size . " bytes)");
                 continue;
             }
 
-            $extension = strtolower(pathinfo($_FILES['images']['name'][$i], PATHINFO_EXTENSION));
+            $extension = strtolower(pathinfo($imageFile['name'], PATHINFO_EXTENSION));
             $file_name = 'product_' . $product_id . '_' . time() . '_' . bin2hex(random_bytes(4)) . '.' . $extension;
             $file_path = $uploads_dir . $file_name;
 
-            if (move_uploaded_file($_FILES['images']['tmp_name'][$i], $file_path)) {
+            if (move_uploaded_file($imageFile['tmp_name'], $file_path)) {
                 $img_stmt = $database->prepare("INSERT INTO product_images (product_id, image_name, image_path, image_size, image_type) VALUES (?, ?, ?, ?, ?)");
                 if ($img_stmt) {
                     $relative_path = 'uploads/products/' . $file_name;
-                    $img_stmt->bind_param('issis', $product_id, $_FILES['images']['name'][$i], $relative_path, $file_size, $file_type);
+                    $img_stmt->bind_param('issis', $product_id, $imageFile['name'], $relative_path, $file_size, $file_type);
                     if ($img_stmt->execute()) {
                         $uploadedImages[] = $relative_path;
                         $image_count++;
@@ -373,7 +413,7 @@ function handleUpdateProduct($database) {
                     $img_stmt->close();
                 }
             } else {
-                error_log("Failed to move uploaded file: " . $_FILES['images']['tmp_name'][$i] . " to " . $file_path);
+                error_log("Failed to move uploaded file: " . $imageFile['tmp_name'] . " to " . $file_path);
             }
         }
     }

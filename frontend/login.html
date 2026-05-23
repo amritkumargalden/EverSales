@@ -66,6 +66,11 @@
                 
                 <button type="submit" class="btn-primary">Register</button>
             </form>
+
+            <div class="admin-access-note">
+                <span>Admin access?</span>
+                <a href="admin-login.html">Admin Login</a>
+            </div>
         </div>
     </div>
     
@@ -133,7 +138,8 @@
         document.addEventListener('DOMContentLoaded', async () => {
             const loggedIn = await isLoggedIn();
             if (loggedIn) {
-                window.location.href = 'index.html';
+                const user = getCurrentUser();
+                window.location.href = user.role === 'admin' ? 'admin-dashboard.html' : 'index.html';
             }
         });
     </script>

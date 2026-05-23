@@ -57,7 +57,7 @@ async function login(email, password) {
 
             showMessage('Login successful!', 'success');
             setTimeout(() => {
-                window.location.href = 'index.html';
+                window.location.href = data.user.role === 'admin' ? 'admin-dashboard.html' : 'index.html';
             }, 1500);
         } else {
             showMessage(data.message || 'Login failed', 'error');

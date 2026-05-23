@@ -39,6 +39,7 @@ if ($action === 'get-all') {
 function getAllProducts() {
     $db = new Database();
     $db->connect();
+    ensureProductModerationColumn($db);
     
     $result = $db->getResults("
         SELECT 
@@ -55,6 +56,7 @@ function getAllProducts() {
         FROM products p 
         LEFT JOIN users u ON p.seller_id = u.id
         LEFT JOIN product_images pi ON p.product_id = pi.product_id
+        WHERE p.product_status = 'approved'
         GROUP BY p.product_id
         LIMIT 50
     ");
@@ -96,6 +98,7 @@ function getSingleProduct() {
     
     $db = new Database();
     $db->connect();
+    ensureProductModerationColumn($db);
     $pid = (int)$product_id;
     
     $product = $db->getRow("
@@ -167,6 +170,7 @@ function searchProducts() {
 
     $db = new Database();
     $db->connect();
+    ensureProductModerationColumn($db);
 
     $likeQuery = '%' . $query . '%';
 
@@ -184,7 +188,8 @@ function searchProducts() {
         FROM products p
         LEFT JOIN users u ON p.seller_id = u.id
         LEFT JOIN product_images pi ON p.product_id = pi.product_id
-        WHERE p.name LIKE ? OR p.description LIKE ? OR u.full_name LIKE ?
+        WHERE p.product_status = 'approved'
+        AND (p.name LIKE ? OR p.description LIKE ? OR u.full_name LIKE ?)
         GROUP BY p.product_id
         ORDER BY p.name ASC
         LIMIT 50");
@@ -225,5 +230,12 @@ function searchProducts() {
         'total' => count($products),
         'query' => $query
     ]);
+}
+
+function ensureProductModerationColumn($db) {
+    $column = $db->query("SHOW COLUMNS FROM products LIKE 'product_status'");
+    if ($column instanceof mysqli_result && $column->num_rows === 0) {
+        $db->execute("ALTER TABLE products ADD COLUMN product_status ENUM('pending', 'approved', 'rejected') NOT NULL DEFAULT 'approved'");
+    }
 }
 ?>
