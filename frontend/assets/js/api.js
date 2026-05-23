@@ -55,16 +55,16 @@ async function login(email, password) {
             localStorage.setItem('user_role', data.user.role);
             localStorage.setItem('auth_token', 'logged_in');
 
-            showMessage('Login successful!', 'success');
+            if (typeof showToast === 'function') showToast('Login successful!', 'success'); else showMessage('Login successful!', 'success');
             setTimeout(() => {
                 window.location.href = data.user.role === 'admin' ? 'admin-dashboard.html' : 'index.html';
             }, 1500);
         } else {
-            showMessage(data.message || 'Login failed', 'error');
+            if (typeof showToast === 'function') showToast(data.message || 'Login failed', 'error'); else showMessage(data.message || 'Login failed', 'error');
         }
     } catch (error) {
         console.error('Login error:', error);
-        showMessage('Network error. Please try again.', 'error');
+            if (typeof showToast === 'function') showToast('Network error. Please try again.', 'error'); else showMessage('Network error. Please try again.', 'error');
     }
 }
 
@@ -91,18 +91,18 @@ async function register(fullName, email, password, confirmPassword, phoneNumber)
         const data = await response.json();
 
         if (data.success) {
-            showMessage('Registration successful! Redirecting to login...', 'success');
+            if (typeof showToast === 'function') showToast('Registration successful! Redirecting to login...', 'success'); else showMessage('Registration successful! Redirecting to login...', 'success');
             setTimeout(() => {
                 toggleForm('login');
                 document.getElementById('loginEmail').value = email;
                 document.getElementById('loginPassword').value = '';
             }, 1500);
         } else {
-            showMessage(data.message || 'Registration failed', 'error');
+            if (typeof showToast === 'function') showToast(data.message || 'Registration failed', 'error'); else showMessage(data.message || 'Registration failed', 'error');
         }
     } catch (error) {
         console.error('Registration error:', error);
-        showMessage('Network error. Please try again.', 'error');
+        if (typeof showToast === 'function') showToast('Network error. Please try again.', 'error'); else showMessage('Network error. Please try again.', 'error');
     }
 }
 
@@ -145,6 +145,44 @@ function showMessage(message, type = 'info') {
         setTimeout(() => {
             messageDiv.style.display = 'none';
         }, 5000);
+    }
+}
+
+/**
+ * Show a small toast notification (floating) using DOM.
+ */
+function showToast(message, type = 'info', timeout = 4000) {
+    let container = document.querySelector('.toast-container');
+    if (!container) {
+        container = document.createElement('div');
+        container.className = 'toast-container';
+        document.body.appendChild(container);
+    }
+
+    const toast = document.createElement('div');
+    toast.className = `toast ${type}`;
+    toast.innerHTML = `<span class="toast-message">${message}</span>`;
+
+    const closeBtn = document.createElement('button');
+    closeBtn.className = 'close-btn';
+    closeBtn.innerHTML = '×';
+    closeBtn.onclick = () => {
+        toast.classList.remove('show');
+        setTimeout(() => toast.remove(), 220);
+    };
+
+    toast.appendChild(closeBtn);
+    container.appendChild(toast);
+
+    // Trigger enter animation
+    requestAnimationFrame(() => toast.classList.add('show'));
+
+    // Auto remove
+    if (timeout > 0) {
+        setTimeout(() => {
+            toast.classList.remove('show');
+            setTimeout(() => toast.remove(), 220);
+        }, timeout);
     }
 }
 

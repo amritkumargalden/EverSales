@@ -65,12 +65,13 @@ function createProductCard(product) {
         actionContent = `<div class="seller-view">Seller View</div>`;
     } else {
         actionContent = `
-            <form style="display: flex; gap: 0.5rem; width: 100%; margin: 0;">
+            <form class="product-buy-form">
                 <input type="hidden" name="product_id" value="${product.id}">
-                <input type="number" name="quantity" value="1" min="1" class="form-control" style="width: 80px; padding: 0.5rem;" required>
-                <button type="button" class="btn btn-primary" style="flex: 1; padding: 0.75rem 1.5rem; margin: 0;" onclick="addToCartWithQuantity(${product.id}, '${escapeHtml(product.name)}', ${retailPrice}, event)">
-                    <i class="fas fa-cart-plus"></i> Add to Cart
-                </button>
+                <input type="number" name="quantity" value="1" min="1" class="form-control quantity-control" required>
+                <div class="buy-actions">
+                    <button type="button" class="btn btn-wholesale" onclick="addToCartWithQuantity(${product.id}, '${escapeHtml(product.name)}', ${retailPrice}, ${wholesalePrice}, ${minWholesaleQty}, 'retail', event)">Buy Retail</button>
+                    <button type="button" class="btn btn-wholesale" onclick="addToCartWithQuantity(${product.id}, '${escapeHtml(product.name)}', ${retailPrice}, ${wholesalePrice}, ${minWholesaleQty}, 'wholesale', event)">Buy Wholesale</button>
+                </div>
             </form>
         `;
     }
@@ -199,15 +200,23 @@ function escapeHtml(text) {
 /**
  * Add to cart with quantity from form
  */
-function addToCartWithQuantity(productId, productName, price, event) {
+function addToCartWithQuantity(productId, productName, retailPrice, wholesalePrice, minWholesaleQty, purchaseType, event) {
     event.preventDefault();
 
     const form = event.target.closest('form');
     const quantityInput = form.querySelector('input[name="quantity"]');
     const quantity = parseInt(quantityInput.value) || 1;
+    const normalizedType = purchaseType === 'wholesale' ? 'wholesale' : 'retail';
+    const effectivePrice = parseFloat(normalizedType === 'wholesale' ? wholesalePrice : retailPrice) || 0;
+
+    if (normalizedType === 'wholesale' && quantity < minWholesaleQty) {
+        quantityInput.value = minWholesaleQty;
+        showMessage(`Wholesale orders require at least ${minWholesaleQty} units. Quantity updated for you.`, 'info');
+        return;
+    }
 
     const cart = getCart();
-    const existingItem = cart.find(item => item.productId === productId);
+    const existingItem = cart.find(item => item.productId === productId && (item.purchaseType || 'retail') === normalizedType);
 
     if (existingItem) {
         existingItem.quantity += quantity;
@@ -215,13 +224,21 @@ function addToCartWithQuantity(productId, productName, price, event) {
         cart.push({
             productId: productId,
             name: productName,
-            price: price,
+            price: effectivePrice,
+            retailPrice: retailPrice,
+            wholesalePrice: wholesalePrice,
+            minWholesaleQty: minWholesaleQty,
+            purchaseType: normalizedType,
             quantity: quantity
         });
     }
 
     saveCart(cart);
-    showMessage(`${productName} added to cart! (Qty: ${quantity})`, 'success');
+    if (typeof showToast === 'function') {
+        showToast(`${productName} added to cart (${normalizedType}) — Qty: ${quantity}`, 'success');
+    } else {
+        showMessage(`${productName} added to cart as ${normalizedType}! (Qty: ${quantity})`, 'success');
+    }
     updateCartBadge();
 }
 

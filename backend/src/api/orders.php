@@ -99,7 +99,7 @@ function handleCreateOrder($database, $connection, $userId) {
         $orderId = $connection->insert_id;
         $orderStmt->close();
 
-        $productStmt = $connection->prepare("SELECT product_id, name, price, stock FROM products WHERE product_id = ? LIMIT 1");
+        $productStmt = $connection->prepare("SELECT product_id, name, price, wholesale_price, min_wholesale_qty, stock FROM products WHERE product_id = ? LIMIT 1");
         $itemStmt = $connection->prepare("INSERT INTO order_items (order_id, product_id, quantity, price) VALUES (?, ?, ?, ?)");
         $stockStmt = $connection->prepare("UPDATE products SET stock = stock - ? WHERE product_id = ?");
         $paymentStmt = $connection->prepare("INSERT INTO payments (order_id, amount, payment_method, status) VALUES (?, ?, ?, 'completed')");
@@ -129,7 +129,16 @@ function handleCreateOrder($database, $connection, $userId) {
                 throw new Exception('Insufficient stock for ' . $product['name']);
             }
 
-            $price = (float) $product['price'];
+            $purchaseType = ($item['purchaseType'] ?? 'retail') === 'wholesale' ? 'wholesale' : 'retail';
+            $minWholesaleQty = (int)($product['min_wholesale_qty'] ?? 1);
+
+            if ($purchaseType === 'wholesale' && $quantity < $minWholesaleQty) {
+                throw new Exception('Wholesale quantity for ' . $product['name'] . ' must be at least ' . $minWholesaleQty);
+            }
+
+            $price = $purchaseType === 'wholesale'
+                ? (float) $product['wholesale_price']
+                : (float) $product['price'];
             $lineTotal = $price * $quantity;
             $totalAmount += $lineTotal;
 

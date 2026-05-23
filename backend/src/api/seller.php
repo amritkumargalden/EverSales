@@ -184,10 +184,7 @@ function handleAddProduct($database) {
                 continue;
             }
 
-            // Get MIME type using finfo instead of deprecated mime_content_type
-            $finfo = finfo_open(FILEINFO_MIME_TYPE);
-            $file_type = finfo_file($finfo, $imageFile['tmp_name']);
-            finfo_close($finfo);
+            $file_type = detectImageMimeType($imageFile);
 
             if (!in_array($file_type, $allowed_types)) {
                 error_log("Invalid file type: $file_type for file " . $imageFile['name']);
@@ -262,6 +259,32 @@ function normalizeUploadedImages($files) {
     }
 
     return [$files];
+}
+
+function detectImageMimeType($imageFile) {
+    if (function_exists('finfo_open') && !empty($imageFile['tmp_name'])) {
+        $finfo = finfo_open(FILEINFO_MIME_TYPE);
+        if ($finfo) {
+            $detected = finfo_file($finfo, $imageFile['tmp_name']);
+            finfo_close($finfo);
+            if ($detected) {
+                return $detected;
+            }
+        }
+    }
+
+    if (!empty($imageFile['type'])) {
+        return $imageFile['type'];
+    }
+
+    $extension = strtolower(pathinfo($imageFile['name'] ?? '', PATHINFO_EXTENSION));
+    return match ($extension) {
+        'jpg', 'jpeg' => 'image/jpeg',
+        'png' => 'image/png',
+        'gif' => 'image/gif',
+        'webp' => 'image/webp',
+        default => ''
+    };
 }
 
 /**
@@ -380,9 +403,7 @@ function handleUpdateProduct($database) {
                 continue;
             }
 
-            $finfo = finfo_open(FILEINFO_MIME_TYPE);
-            $file_type = finfo_file($finfo, $imageFile['tmp_name']);
-            finfo_close($finfo);
+            $file_type = detectImageMimeType($imageFile);
 
             if (!in_array($file_type, $allowed_types)) {
                 error_log("Invalid file type: $file_type for file " . $imageFile['name']);

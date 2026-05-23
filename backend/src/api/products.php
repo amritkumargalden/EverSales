@@ -40,6 +40,14 @@ function getAllProducts() {
     $db = new Database();
     $db->connect();
     ensureProductModerationColumn($db);
+
+    $currentUserId = isset($_SESSION['user_id']) ? (int)$_SESSION['user_id'] : 0;
+    $currentUserRole = $_SESSION['user_role'] ?? '';
+    $visibilityClause = "p.product_status = 'approved'";
+
+    if ($currentUserRole === 'seller' && $currentUserId > 0) {
+        $visibilityClause = "(p.product_status = 'approved' OR (p.seller_id = $currentUserId AND p.product_status IN ('pending', 'approved')) )";
+    }
     
     $result = $db->getResults("
         SELECT 
@@ -56,7 +64,7 @@ function getAllProducts() {
         FROM products p 
         LEFT JOIN users u ON p.seller_id = u.id
         LEFT JOIN product_images pi ON p.product_id = pi.product_id
-        WHERE p.product_status = 'approved'
+        WHERE $visibilityClause
         GROUP BY p.product_id
         LIMIT 50
     ");
@@ -172,6 +180,14 @@ function searchProducts() {
     $db->connect();
     ensureProductModerationColumn($db);
 
+    $currentUserId = isset($_SESSION['user_id']) ? (int)$_SESSION['user_id'] : 0;
+    $currentUserRole = $_SESSION['user_role'] ?? '';
+    $visibilityClause = "p.product_status = 'approved'";
+
+    if ($currentUserRole === 'seller' && $currentUserId > 0) {
+        $visibilityClause = "(p.product_status = 'approved' OR (p.seller_id = $currentUserId AND p.product_status IN ('pending', 'approved')) )";
+    }
+
     $likeQuery = '%' . $query . '%';
 
     $stmt = $db->prepare("SELECT 
@@ -188,7 +204,7 @@ function searchProducts() {
         FROM products p
         LEFT JOIN users u ON p.seller_id = u.id
         LEFT JOIN product_images pi ON p.product_id = pi.product_id
-        WHERE p.product_status = 'approved'
+        WHERE $visibilityClause
         AND (p.name LIKE ? OR p.description LIKE ? OR u.full_name LIKE ?)
         GROUP BY p.product_id
         ORDER BY p.name ASC

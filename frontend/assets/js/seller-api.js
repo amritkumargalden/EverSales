@@ -20,12 +20,12 @@ async function becomeSeller() {
         if (data.success) {
             // Update user role in localStorage
             localStorage.setItem('user_role', 'seller');
-            showMessage('Welcome to seller mode! You can now add products.', 'success');
+            if (typeof showToast === 'function') showToast('Welcome to seller mode! You can now add products.', 'success'); else showMessage('Welcome to seller mode! You can now add products.', 'success');
             setTimeout(() => {
                 window.location.href = 'seller-dashboard.html';
             }, 1500);
         } else {
-            showMessage(data.message || 'Failed to become seller', 'error');
+            if (typeof showToast === 'function') showToast(data.message || 'Failed to become seller', 'error'); else showMessage(data.message || 'Failed to become seller', 'error');
         }
     } catch (error) {
         console.error('Seller upgrade error:', error);
@@ -60,7 +60,7 @@ async function addProduct(formData) {
         if (data.success) {
             const productName = formData.get('name');
             const imagesCount = data.images_uploaded || 0;
-            showMessage(`Product "${productName}" added successfully with ${imagesCount} image(s)!`, 'success');
+            if (typeof showToast === 'function') showToast(`Product "${productName}" added successfully with ${imagesCount} image(s)!`, 'success'); else showMessage(`Product "${productName}" added successfully with ${imagesCount} image(s)!`, 'success');
 
             // Clear form
             const productForm = document.getElementById('productForm');
@@ -77,12 +77,12 @@ async function addProduct(formData) {
             loadSellerProducts();
             return data;
         } else {
-            showMessage(data.message || 'Failed to add product', 'error');
+            if (typeof showToast === 'function') showToast(data.message || 'Failed to add product', 'error'); else showMessage(data.message || 'Failed to add product', 'error');
             return null;
         }
     } catch (error) {
         console.error('Add product error:', error);
-        showMessage('Network error: ' + error.message, 'error');
+        if (typeof showToast === 'function') showToast('Network error: ' + error.message, 'error'); else showMessage('Network error: ' + error.message, 'error');
         return null;
     }
 }
@@ -124,13 +124,13 @@ async function deleteProduct(productId) {
         const data = await response.json();
 
         if (data.success) {
-            showMessage('Product deleted successfully', 'success');
+            if (typeof showToast === 'function') showToast('Product deleted successfully', 'success'); else showMessage('Product deleted successfully', 'success');
             loadSellerProducts();
         } else {
-            showMessage(data.message || 'Failed to delete product', 'error');
+            if (typeof showToast === 'function') showToast(data.message || 'Failed to delete product', 'error'); else showMessage(data.message || 'Failed to delete product', 'error');
         }
     } catch (error) {
         console.error('Delete product error:', error);
-        showMessage('Network error. Please try again.', 'error');
+        if (typeof showToast === 'function') showToast('Network error. Please try again.', 'error'); else showMessage('Network error. Please try again.', 'error');
     }
 }

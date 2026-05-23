@@ -68,7 +68,7 @@ async function loadAdminDashboard() {
         renderReports(data.reports || {});
     } catch (error) {
         console.error('Admin dashboard error:', error);
-        showMessage(error.message || 'Unable to load admin dashboard', 'error');
+        if (typeof showToast === 'function') showToast(error.message || 'Unable to load admin dashboard', 'error'); else showMessage(error.message || 'Unable to load admin dashboard', 'error');
     }
 }
 
@@ -274,30 +274,30 @@ function renderReports(reports) {
 async function updateUserRole(userId, role) {
     try {
         await adminRequest('update-user-role', { user_id: userId, role });
-        showMessage('User role updated', 'success');
+        if (typeof showToast === 'function') showToast('User role updated', 'success'); else showMessage('User role updated', 'success');
         loadAdminDashboard();
     } catch (error) {
-        showMessage(error.message, 'error');
+        if (typeof showToast === 'function') showToast(error.message, 'error'); else showMessage(error.message, 'error');
     }
 }
 
 async function updateProductStatus(productId, status) {
     try {
         await adminRequest('update-product-status', { product_id: productId, status });
-        showMessage('Product moderation status updated', 'success');
+        if (typeof showToast === 'function') showToast('Product moderation status updated', 'success'); else showMessage('Product moderation status updated', 'success');
         loadAdminDashboard();
     } catch (error) {
-        showMessage(error.message, 'error');
+        if (typeof showToast === 'function') showToast(error.message, 'error'); else showMessage(error.message, 'error');
     }
 }
 
 async function updateOrderStatus(orderId, status) {
     try {
         await adminRequest('update-order-status', { order_id: orderId, status });
-        showMessage('Order status updated', 'success');
+        if (typeof showToast === 'function') showToast('Order status updated', 'success'); else showMessage('Order status updated', 'success');
         loadAdminDashboard();
     } catch (error) {
-        showMessage(error.message, 'error');
+        if (typeof showToast === 'function') showToast(error.message, 'error'); else showMessage(error.message, 'error');
     }
 }
 
@@ -316,11 +316,11 @@ async function saveBanner(event) {
 
     try {
         await adminRequest('save-banner', payload);
-        showMessage('Banner saved', 'success');
+        if (typeof showToast === 'function') showToast('Banner saved', 'success'); else showMessage('Banner saved', 'success');
         resetBannerForm();
         loadAdminDashboard();
     } catch (error) {
-        showMessage(error.message, 'error');
+        if (typeof showToast === 'function') showToast(error.message, 'error'); else showMessage(error.message, 'error');
     }
 }
 
@@ -345,10 +345,10 @@ async function deleteBanner(bannerId) {
 
     try {
         await adminRequest('delete-banner', { banner_id: bannerId });
-        showMessage('Banner deleted', 'success');
+        if (typeof showToast === 'function') showToast('Banner deleted', 'success'); else showMessage('Banner deleted', 'success');
         loadAdminDashboard();
     } catch (error) {
-        showMessage(error.message, 'error');
+        if (typeof showToast === 'function') showToast(error.message, 'error'); else showMessage(error.message, 'error');
     }
 }
 

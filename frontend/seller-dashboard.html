@@ -726,6 +726,24 @@
         </div>
     </div>
 
+    <footer class="site-footer">
+        <div class="container footer-grid">
+            <div>
+                <h3>EverSales Seller Center</h3>
+                <p>List retail and wholesale products, manage stock, and keep buyers updated.</p>
+            </div>
+            <div>
+                <h4>Customer Support</h4>
+                <p>Email: <a href="mailto:amritkumargaldentamang@gmail.com">amritkumargaldentamang@gmail.com</a></p>
+                <p>Phone: <a href="tel:1234567890">1234567890</a></p>
+            </div>
+            <div>
+                <h4>Seller Help</h4>
+                <p>Contact admin for product approval, image upload issues, wholesale pricing, and order questions.</p>
+            </div>
+        </div>
+    </footer>
+
     <script src="assets/js/api.js?v=20260523"></script>
     <script src="assets/js/seller-api.js?v=20260523"></script>
     <script src="assets/js/image-upload.js?v=20260523"></script>
@@ -792,7 +810,7 @@
         }
 
         async function handleAddProduct(event) {
-            event.preventDefault();
+                    event.preventDefault();
 
             const formData = new FormData(document.getElementById('productForm'));
             const result = await addProduct(formData);
@@ -875,8 +893,8 @@
         async function handleEditProduct(event) {
             event.preventDefault();
 
-            if (!currentEditProductId) {
-                showMessage('Error: Product ID not found', 'error');
+                    if (!currentEditProductId) {
+                if (typeof showToast === 'function') showToast('Error: Product ID not found', 'error'); else showMessage('Error: Product ID not found', 'error');
                 return;
             }
 
@@ -905,18 +923,18 @@
 
                 const data = await response.json();
 
-                if (data.success) {
-                    const imageNote = data.images_uploaded > 0 ? ` and ${data.images_uploaded} image(s) added` : '';
-                    showMessage(`Product updated successfully${imageNote}!`, 'success');
+                    if (data.success) {
+                            const imageNote = data.images_uploaded > 0 ? ` and ${data.images_uploaded} image(s) added` : '';
+                    if (typeof showToast === 'function') showToast(`Product updated successfully${imageNote}!`, 'success'); else showMessage(`Product updated successfully${imageNote}!`, 'success');
                     closeEditModal();
                     loadSellerProducts();
                 } else {
-                    showMessage(data.message || 'Failed to update product', 'error');
+                    if (typeof showToast === 'function') showToast(data.message || 'Failed to update product', 'error'); else showMessage(data.message || 'Failed to update product', 'error');
                 }
-            } catch (error) {
-                console.error('Update error:', error);
-                showMessage('Network error. Please try again.', 'error');
-            }
+                    } catch (error) {
+                    console.error('Update error:', error);
+                    if (typeof showToast === 'function') showToast('Network error. Please try again.', 'error'); else showMessage('Network error. Please try again.', 'error');
+                }
         }
 
         let currentProductId = null;
@@ -973,7 +991,7 @@
                     document.getElementById('compressedSize').textContent = result.compressedSize;
                     document.getElementById('compressionRatio').textContent = result.message.split(': ')[1]?.split(' ')[0] || '0%';
                 } else {
-                    showMessage('Error uploading ' + file.name + ': ' + result.message, 'error');
+                    if (typeof showToast === 'function') showToast('Error uploading ' + file.name + ': ' + result.message, 'error'); else showMessage('Error uploading ' + file.name + ': ' + result.message, 'error');
                 }
             }
 
@@ -1018,11 +1036,11 @@
             
             const result = await deleteProductImage(imageId);
             if (result.success) {
-                showMessage(result.message, 'success');
-                loadProductGallery(productId);
+                if (typeof showToast === 'function') showToast(result.message, 'success'); else showMessage(result.message, 'success');
+                            loadProductGallery(productId);
                 loadSellerProducts();
             } else {
-                showMessage('Error: ' + result.message, 'error');
+                if (typeof showToast === 'function') showToast('Error: ' + result.message, 'error'); else showMessage('Error: ' + result.message, 'error');
             }
         }
 

@@ -5,28 +5,23 @@
 
 const CART_STORAGE_KEY = 'shopping_cart';
 
-/**
- * Initialize cart from localStorage
- */
 function getCart() {
     const cart = localStorage.getItem(CART_STORAGE_KEY);
     return cart ? JSON.parse(cart) : [];
 }
 
-/**
- * Save cart to localStorage
- */
 function saveCart(cart) {
     localStorage.setItem(CART_STORAGE_KEY, JSON.stringify(cart));
 }
 
-/**
- * Add product to cart
- */
+function getCartKey(item) {
+    return item.cartKey || `${item.productId}-${item.purchaseType || 'retail'}`;
+}
+
 function addToCart(productId, productName, price) {
     const cart = getCart();
-    const existingItem = cart.find(item => item.productId === productId);
-    
+    const existingItem = cart.find(item => item.productId === productId && (item.purchaseType || 'retail') === 'retail');
+
     if (existingItem) {
         existingItem.quantity += 1;
     } else {
@@ -34,145 +29,144 @@ function addToCart(productId, productName, price) {
             productId: productId,
             name: productName,
             price: price,
-            quantity: 1
+            quantity: 1,
+            purchaseType: 'retail'
         });
     }
-    
+
     saveCart(cart);
-    showMessage(`${productName} added to cart!`, 'success');
+    if (typeof showToast === 'function') {
+        showToast(`${productName} added to cart — Qty: 1`, 'success');
+    } else {
+        showMessage(`${productName} added to cart!`, 'success');
+    }
     updateCartBadge();
 }
 
-/**
- * Remove item from cart
- */
-function removeFromCart(productId) {
-    let cart = getCart();
-    cart = cart.filter(item => item.productId !== productId);
-    saveCart(cart);
+function removeFromCart(cartKey) {
+    const nextCart = getCart().filter(item => getCartKey(item) !== String(cartKey));
+    saveCart(nextCart);
     loadCart();
     updateCartBadge();
 }
 
-/**
- * Update cart item quantity
- */
-function updateCartQuantity(productId, quantity) {
-    if (quantity <= 0) {
-        removeFromCart(productId);
+function updateCartQuantity(cartKey, quantity) {
+    const nextQuantity = parseInt(quantity);
+
+    if (nextQuantity <= 0) {
+        removeFromCart(cartKey);
         return;
     }
-    
+
     const cart = getCart();
-    const item = cart.find(item => item.productId === productId);
-    
+    const item = cart.find(cartItem => getCartKey(cartItem) === String(cartKey));
+
     if (item) {
-        item.quantity = parseInt(quantity);
+        if ((item.purchaseType || 'retail') === 'wholesale' && nextQuantity < Number(item.minWholesaleQty || 1)) {
+            if (typeof showToast === 'function') showToast(`Wholesale quantity must be at least ${item.minWholesaleQty}`, 'info'); else showMessage(`Wholesale quantity must be at least ${item.minWholesaleQty}`, 'info');
+            item.quantity = Number(item.minWholesaleQty || 1);
+        } else {
+            item.quantity = nextQuantity;
+        }
+
         saveCart(cart);
         loadCart();
         updateCartBadge();
     }
 }
 
-/**
- * Clear entire cart
- */
 function clearCart() {
     if (confirm('Are you sure you want to clear your cart?')) {
         localStorage.removeItem(CART_STORAGE_KEY);
         loadCart();
         updateCartBadge();
-        showMessage('Cart cleared', 'info');
+        if (typeof showToast === 'function') showToast('Cart cleared', 'info'); else showMessage('Cart cleared', 'info');
     }
 }
 
-/**
- * Load and display cart items
- */
 function loadCart() {
     const cart = getCart();
     const cartContainer = document.getElementById('cartContainer');
-    
+
     if (!cartContainer) return;
-    
+
     if (cart.length === 0) {
         cartContainer.innerHTML = '<p style="text-align: center; padding: 20px;">Your cart is empty</p>';
-        document.getElementById('cartTotal').textContent = '₹0.00';
+        document.getElementById('cartTotal').textContent = 'NPR 0.00';
         return;
     }
-    
+
     let total = 0;
     let html = '';
-    
+
     cart.forEach(item => {
+        item.purchaseType = item.purchaseType || 'retail';
+        item.cartKey = getCartKey(item);
+
         const itemTotal = item.price * item.quantity;
+        const isWholesale = item.purchaseType === 'wholesale';
+        const minQty = Number(item.minWholesaleQty || 1);
+        const typeLabel = isWholesale ? `Wholesale min ${minQty}` : 'Retail';
         total += itemTotal;
-        
+
         html += `
             <div class="cart-item">
                 <div class="cart-item-info">
                     <h4>${escapeHtml(item.name)}</h4>
-                    <p>₹${formatPrice(item.price)} x <input type="number" min="1" value="${item.quantity}" onchange="updateCartQuantity(${item.productId}, this.value)" class="quantity-input"></p>
+                    <span class="cart-type">${typeLabel}</span>
+                    <p>NPR ${formatPrice(item.price)} x <input type="number" min="${isWholesale ? minQty : 1}" value="${item.quantity}" onchange="updateCartQuantity('${item.cartKey}', this.value)" class="quantity-input"></p>
                 </div>
                 <div class="cart-item-total">
-                    <p>₹${formatPrice(itemTotal)}</p>
-                    <button onclick="removeFromCart(${item.productId})" class="btn-remove">Remove</button>
+                    <p>NPR ${formatPrice(itemTotal)}</p>
+                    <button onclick="removeFromCart('${item.cartKey}')" class="btn-remove">Remove</button>
                 </div>
             </div>
         `;
     });
-    
+
+    saveCart(cart);
     cartContainer.innerHTML = html;
-    document.getElementById('cartTotal').textContent = '₹' + formatPrice(total);
+    document.getElementById('cartTotal').textContent = 'NPR ' + formatPrice(total);
 }
 
-/**
- * Update cart badge count
- */
 function updateCartBadge() {
     return;
 }
 
-/**
- * Checkout function
- */
 async function checkout() {
     const cart = getCart();
-    
+
     if (cart.length === 0) {
-        showMessage('Your cart is empty', 'info');
+        if (typeof showToast === 'function') showToast('Your cart is empty', 'info'); else showMessage('Your cart is empty', 'info');
         return;
     }
-    
+
     const user = getCurrentUser();
-    
+
     if (!user.id) {
-        showMessage('Please log in to checkout', 'error');
+        if (typeof showToast === 'function') showToast('Please log in to checkout', 'error'); else showMessage('Please log in to checkout', 'error');
         return;
     }
-    
+
     const total = cart.reduce((sum, item) => sum + (item.price * item.quantity), 0);
-    
+
     const confirmMessage = `
 Order Summary:
-${cart.map(item => `- ${item.name} x${item.quantity} = ₹${formatPrice(item.price * item.quantity)}`).join('\n')}
+${cart.map(item => `- ${item.name} (${item.purchaseType || 'retail'}) x${item.quantity} = NPR ${formatPrice(item.price * item.quantity)}`).join('\n')}
 
-Total: ₹${formatPrice(total)}
+Total: NPR ${formatPrice(total)}
 
 Proceed to checkout?`;
-    
+
     if (confirm(confirmMessage)) {
         if (typeof placeOrder === 'function') {
             await placeOrder(cart);
         } else {
-            showMessage('Order system is not available right now.', 'error');
+            if (typeof showToast === 'function') showToast('Order system is not available right now.', 'error'); else showMessage('Order system is not available right now.', 'error');
         }
     }
 }
 
-/**
- * Initialize cart on page load
- */
 document.addEventListener('DOMContentLoaded', () => {
     updateCartBadge();
 });

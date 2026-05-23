@@ -59,9 +59,7 @@ function handleProductImageUpload() {
 
     // Validate file using the actual uploaded content, not only browser-provided metadata.
     $allowed_types = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp', 'image/gif'];
-    $finfo = finfo_open(FILEINFO_MIME_TYPE);
-    $detected_type = finfo_file($finfo, $file['tmp_name']);
-    finfo_close($finfo);
+    $detected_type = detectImageMimeType($file);
 
     if (!in_array($detected_type, $allowed_types, true)) {
         http_response_code(400);
@@ -221,6 +219,32 @@ function compressImage($source_path, $mime_type) {
     imagedestroy($image);
 
     return $compressed;
+}
+
+function detectImageMimeType($file) {
+    if (function_exists('finfo_open') && !empty($file['tmp_name'])) {
+        $finfo = finfo_open(FILEINFO_MIME_TYPE);
+        if ($finfo) {
+            $detected = finfo_file($finfo, $file['tmp_name']);
+            finfo_close($finfo);
+            if ($detected) {
+                return $detected;
+            }
+        }
+    }
+
+    if (!empty($file['type'])) {
+        return $file['type'];
+    }
+
+    $extension = strtolower(pathinfo($file['name'] ?? '', PATHINFO_EXTENSION));
+    return match ($extension) {
+        'jpg', 'jpeg' => 'image/jpeg',
+        'png' => 'image/png',
+        'gif' => 'image/gif',
+        'webp' => 'image/webp',
+        default => ''
+    };
 }
 
 /**

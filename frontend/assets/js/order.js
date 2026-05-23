@@ -80,7 +80,7 @@ function renderOrderList(containerId, orders, emptyMessage) {
 
 async function placeOrder(cart) {
     if (!Array.isArray(cart) || cart.length === 0) {
-        showMessage('Your cart is empty', 'info');
+        if (typeof showToast === 'function') showToast('Your cart is empty', 'info'); else showMessage('Your cart is empty', 'info');
         return false;
     }
 
@@ -100,7 +100,7 @@ async function placeOrder(cart) {
         const data = await response.json();
 
         if (!data.success) {
-            showMessage(data.message || 'Checkout failed', 'error');
+            if (typeof showToast === 'function') showToast(data.message || 'Checkout failed', 'error'); else showMessage(data.message || 'Checkout failed', 'error');
             return false;
         }
 
@@ -118,11 +118,11 @@ async function placeOrder(cart) {
             loadOrders();
         }
 
-        showMessage(`Order #${data.order_id} placed successfully!`, 'success');
+        if (typeof showToast === 'function') showToast(`Order #${data.order_id} placed successfully!`, 'success'); else showMessage(`Order #${data.order_id} placed successfully!`, 'success');
         return true;
     } catch (error) {
         console.error('Place order error:', error);
-        showMessage('Checkout failed. Please try again.', 'error');
+        if (typeof showToast === 'function') showToast('Checkout failed. Please try again.', 'error'); else showMessage('Checkout failed. Please try again.', 'error');
         return false;
     }
 }
