@@ -20,6 +20,12 @@ async function requireAuth() {
  * Redirects to admin login if not
  */
 async function requireAdminAuth() {
+    const loggedIn = await isLoggedIn();
+    if (!loggedIn) {
+        window.location.href = 'admin-login.html';
+        return false;
+    }
+
     const user = getCurrentUser();
     if (user.role !== 'admin') {
         window.location.href = 'admin-login.html';
@@ -52,11 +58,7 @@ async function adminLogin(email, password) {
                 return;
             }
 
-            localStorage.setItem('user_id', data.user.id);
-            localStorage.setItem('user_email', data.user.email);
-            localStorage.setItem('user_name', data.user.full_name);
-            localStorage.setItem('user_role', data.user.role);
-            localStorage.setItem('auth_token', 'logged_in');
+            storeUser(data.user);
 
             showMessage('Admin login successful!', 'success');
             setTimeout(() => {
@@ -80,15 +82,12 @@ document.addEventListener('DOMContentLoaded', async () => {
     if (currentPage === 'admin-dashboard.html') {
         await requireAdminAuth();
     } else if (currentPage === 'admin-login.html') {
+        const loggedIn = await isLoggedIn();
         const user = getCurrentUser();
-        if (user.role === 'admin') {
+        if (loggedIn && user.role === 'admin') {
             window.location.href = 'admin-dashboard.html';
         } else if (user.role) {
-            localStorage.removeItem('user_id');
-            localStorage.removeItem('user_email');
-            localStorage.removeItem('user_name');
-            localStorage.removeItem('user_role');
-            localStorage.removeItem('auth_token');
+            clearStoredUser();
         }
     } else {
         const protectedPages = ['dashboard.html', 'index.html'];

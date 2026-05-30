@@ -7,6 +7,7 @@ create table users(
     email varchar(255) not null unique, 
     password varchar(255) not null,
     role enum('admin', 'customer', 'seller') not null,
+    is_blocked tinyint(1) not null default 0,
     phone_number varchar(20),
     created_at timestamp default current_timestamp,
     updated_at timestamp default current_timestamp on update current_timestamp
@@ -81,6 +82,19 @@ create table payments(
     created_at timestamp default current_timestamp,
     updated_at timestamp default current_timestamp on update current_timestamp,
     foreign key (order_id) references orders(order_id)
+);
+
+create table order_feedback(
+    feedback_id int auto_increment primary key,
+    order_id int not null,
+    user_id int not null,
+    feedback_type enum('review', 'complaint') not null,
+    rating int,
+    message text not null,
+    is_resolved tinyint(1) not null default 0,
+    created_at timestamp default current_timestamp,
+    foreign key (order_id) references orders(order_id) on delete cascade,
+    foreign key (user_id) references users(id) on delete cascade
 );
 
 create table banners(

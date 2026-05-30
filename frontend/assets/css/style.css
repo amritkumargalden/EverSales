@@ -100,6 +100,21 @@ body.auth-page {
     font-weight: 700;
 }
 
+.cart-count-badge {
+    align-items: center;
+    justify-content: center;
+    min-width: 1.35rem;
+    height: 1.35rem;
+    margin-left: 0.4rem;
+    padding: 0 0.35rem;
+    border-radius: 999px;
+    background: #B75F67;
+    color: #fff;
+    font-size: 0.75rem;
+    font-weight: 700;
+    line-height: 1;
+}
+
 .site-footer {
     margin-top: 3rem;
     background: rgba(31, 36, 48, 0.94);
@@ -417,6 +432,35 @@ body.auth-page.theme-reverse {
     color: var(--text-primary);
 }
 
+.form-group select,
+.form-group textarea {
+    width: 100%;
+    padding: 0.75rem;
+    border: 1px solid rgba(255, 255, 255, 0.18);
+    border-radius: 14px;
+    font-size: 1rem;
+    background: rgba(255, 255, 255, 0.92);
+    color: var(--text-primary);
+}
+
+.form-group textarea {
+    min-height: 120px;
+    resize: vertical;
+}
+
+.feedback-actions {
+    display: flex;
+    gap: 0.75rem;
+    flex-wrap: wrap;
+    margin-top: 0.5rem;
+}
+
+.feedback-actions .btn-primary,
+.feedback-actions .btn-secondary {
+    flex: 1;
+    margin: 0;
+}
+
 .form-group input:focus {
     outline: none;
     border-color: rgba(255, 255, 255, 0.6);
@@ -498,6 +542,7 @@ button:hover {
     display: flex;
     gap: 2rem;
     margin: 2rem 0;
+    align-items: flex-start;
 }
 
 .products-section {
@@ -507,6 +552,45 @@ button:hover {
 .products-section h2 {
     margin-bottom: 1.5rem;
     color: #2c3e50;
+}
+
+.personalized-content {
+    display: grid;
+    gap: 1.5rem;
+    margin-bottom: 2rem;
+}
+
+.personalized-section {
+    background: rgba(255, 255, 255, 0.9);
+    border: 1px solid rgba(255, 255, 255, 0.35);
+    border-radius: 8px;
+    padding: 1.25rem;
+    box-shadow: 0 18px 40px rgba(22, 18, 44, 0.14);
+}
+
+.personalized-header {
+    display: flex;
+    justify-content: space-between;
+    gap: 1rem;
+    align-items: flex-end;
+    margin-bottom: 1rem;
+}
+
+.personalized-header h2 {
+    margin: 0 0 0.25rem;
+    color: var(--text-primary);
+    font-size: 1.35rem;
+}
+
+.personalized-header p {
+    margin: 0;
+    color: var(--text-secondary);
+}
+
+.personalized-grid {
+    grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+    gap: 1rem;
+    margin-bottom: 0;
 }
 
 /* Product Grid - Enhanced from Nisha */
@@ -673,7 +757,19 @@ button:hover {
     box-shadow: 0 24px 40px rgba(22, 18, 44, 0.18);
     display: flex;
     flex-direction: column;
-    max-height: 600px;
+    position: sticky;
+    top: 96px;
+    align-self: flex-start;
+    max-height: calc(100vh - 140px);
+    border: 1px solid rgba(86, 74, 150, 0.25);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+}
+
+#cartSidebar {
+    position: sticky;
+    top: 96px;
+    align-self: flex-start;
 }
 
 .cart-sidebar.hidden {
@@ -704,6 +800,7 @@ button:hover {
     flex: 1;
     overflow-y: auto;
     padding: 1rem;
+    background: rgba(255, 255, 255, 0.85);
 }
 
 .cart-item {
@@ -957,6 +1054,8 @@ table tbody tr:hover {
 
     .cart-sidebar {
         width: 100%;
+        position: static;
+        max-height: none;
     }
 
     .product-grid {

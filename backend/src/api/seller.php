@@ -27,6 +27,7 @@ require_once __DIR__ . '/../util/Database.php';
 
 $database = new Database();
 $database->connect();
+ensureSellerBlockColumn($database);
 
 $request = isset($_GET['action']) ? $_GET['action'] : '';
 
@@ -95,6 +96,42 @@ function handleBecomeSeller($database) {
     $stmt->close();
 }
 
+function ensureSellerBlockColumn($database) {
+    $column = $database->query("SHOW COLUMNS FROM users LIKE 'is_blocked'");
+    if ($column instanceof mysqli_result && $column->num_rows === 0) {
+        $database->execute("ALTER TABLE users ADD COLUMN is_blocked TINYINT(1) NOT NULL DEFAULT 0");
+    }
+}
+
+function ensureSellerNotBlocked($database, $userId) {
+    $stmt = $database->prepare("SELECT is_blocked FROM users WHERE id = ? LIMIT 1");
+    if (!$stmt) {
+        http_response_code(500);
+        echo json_encode(['success' => false, 'message' => 'Failed to check seller status']);
+        return false;
+    }
+
+    $stmt->bind_param('i', $userId);
+    $stmt->execute();
+    $result = $stmt->get_result();
+    $row = $result ? $result->fetch_assoc() : null;
+    $stmt->close();
+
+    if (!$row) {
+        http_response_code(401);
+        echo json_encode(['success' => false, 'message' => 'User not found']);
+        return false;
+    }
+
+    if ((int)($row['is_blocked'] ?? 0) === 1) {
+        http_response_code(403);
+        echo json_encode(['success' => false, 'message' => 'Seller account is blocked. Contact support.']);
+        return false;
+    }
+
+    return true;
+}
+
 /**
  * Handle adding a new product with images
  */
@@ -118,6 +155,9 @@ function handleAddProduct($database) {
     }
 
     $seller_id = $_SESSION['user_id'];
+    if (!ensureSellerNotBlocked($database, $seller_id)) {
+        return;
+    }
     ensureProductModerationColumn($database);
     $name = trim($_POST['name'] ?? '');
     $description = trim($_POST['description'] ?? '');
@@ -304,6 +344,9 @@ function handleUpdateProduct($database) {
     }
 
     $seller_id = $_SESSION['user_id'];
+    if (!ensureSellerNotBlocked($database, $seller_id)) {
+        return;
+    }
     $product_id = intval($_POST['product_id'] ?? 0);
     $name = trim($_POST['name'] ?? '');
     $description = trim($_POST['description'] ?? '');
@@ -464,6 +507,9 @@ function handleGetSellerProducts($database) {
     }
 
     $seller_id = $_SESSION['user_id'];
+    if (!ensureSellerNotBlocked($database, $seller_id)) {
+        return;
+    }
 
     $stmt = $database->prepare("SELECT p.*, COUNT(pi.image_id) as image_count, GROUP_CONCAT(pi.image_path SEPARATOR '|') as image_paths FROM products p LEFT JOIN product_images pi ON p.product_id = pi.product_id WHERE p.seller_id = ? GROUP BY p.product_id ORDER BY p.created_at DESC");
     if (!$stmt) {
@@ -510,6 +556,10 @@ function handleDeleteProduct($database) {
     $input = json_decode(file_get_contents('php://input'), true);
     $product_id = intval($input['product_id'] ?? 0);
     $seller_id = $_SESSION['user_id'];
+
+    if (!ensureSellerNotBlocked($database, $seller_id)) {
+        return;
+    }
 
     if (!$product_id) {
         http_response_code(400);

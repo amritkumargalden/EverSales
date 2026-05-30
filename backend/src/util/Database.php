@@ -27,6 +27,10 @@ class Database {
      * Connect to MySQL database
      */
     public function connect() {
+        if (function_exists('mysqli_report')) {
+            mysqli_report(MYSQLI_REPORT_OFF);
+        }
+
         $this->connection = new mysqli(
             $this->host,
             $this->db_user,
@@ -36,9 +40,14 @@ class Database {
 
         // Check connection
         if ($this->connection->connect_error) {
+            if (!headers_sent()) {
+                http_response_code(500);
+                header('Content-Type: application/json');
+            }
+
             die(json_encode([
                 'success' => false,
-                'message' => 'Database connection failed: ' . $this->connection->connect_error
+                'message' => 'Database connection failed. Please check that MySQL is running and the database settings are correct.'
             ]));
         }
 

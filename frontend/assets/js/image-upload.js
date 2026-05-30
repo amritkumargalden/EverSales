@@ -3,7 +3,7 @@
  * Handles product image uploads with compression feedback
  */
 
-const IMAGE_UPLOAD_API = 'http://localhost:8000/api/image-upload.php';
+const IMAGE_UPLOAD_API = `${BACKEND_ORIGIN}/api/image-upload.php`;
 
 /**
  * Upload product image

@@ -591,7 +591,7 @@
 
                 <div class="form-row">
                     <div class="form-group">
-                        <label for="productPrice">Price (₹) *</label>
+                        <label for="productPrice">Price (NPR) *</label>
                         <input type="number" id="productPrice" name="price" step="0.01" required placeholder="0.00">
                     </div>
                     <div class="form-group">
@@ -616,7 +616,7 @@
                     <div class="file-input-wrapper" id="fileInputWrapper">
                         <input type="file" id="productImages" name="images" multiple accept="image/jpeg,image/png,image/gif,image/webp">
                         <label for="productImages" class="file-input-label" id="fileLabel">
-                            📁 Click to upload or drag & drop images here
+                            Click to upload or drag and drop images here
                         </label>
                     </div>
                     <div class="image-preview" id="imagePreview"></div>
@@ -641,12 +641,12 @@
         <div class="modal-content">
             <div class="modal-header">
                 <h2>Manage Product Images</h2>
-                <button class="modal-close" onclick="closeImageModal()">×</button>
+                <button class="modal-close" onclick="closeImageModal()">&times;</button>
             </div>
             
             <div id="imageUploadBox" class="image-upload-box">
                 <input type="file" id="modalImageInput" accept="image/jpeg,image/png,image/gif,image/webp" multiple>
-                <p>📁 Click or drag images here to upload</p>
+                <p>Click or drag images here to upload</p>
                 <p style="font-size: 12px; color: #bbb; margin-top: 5px;">Max 5MB per image</p>
             </div>
 
@@ -659,7 +659,7 @@
 
             <div class="compression-info" id="compressionInfo" style="display: none;">
                 <strong>Compression Complete!</strong><br>
-                Original: <span id="originalSize">0 KB</span> → Compressed: <span id="compressedSize">0 KB</span>
+                Original: <span id="originalSize">0 KB</span> -> Compressed: <span id="compressedSize">0 KB</span>
                 (<span id="compressionRatio">0%</span> smaller)
             </div>
 
@@ -678,7 +678,7 @@
         <div class="modal-content">
             <div class="modal-header">
                 <h2>Edit Product</h2>
-                <button class="modal-close" onclick="closeEditModal()">×</button>
+                <button class="modal-close" onclick="closeEditModal()">&times;</button>
             </div>
 
             <form id="editForm" onsubmit="handleEditProduct(event)">
@@ -784,7 +784,7 @@
                     item.className = 'preview-item';
                     item.innerHTML = `
                         <img src="${e.target.result}" alt="Preview">
-                        <button type="button" class="remove-btn" onclick="removeImage(${index})">×</button>
+                        <button type="button" class="remove-btn" onclick="removeImage(${index})">&times;</button>
                     `;
                     imagePreview.appendChild(item);
                 };
@@ -835,6 +835,9 @@
                         }
                     }
 
+                    const productNameArg = JSON.stringify(product.name || '');
+                    const productDescriptionArg = JSON.stringify(product.description || '');
+
                     return `
                     <div class="product-card">
                         <div class="product-image">
@@ -845,13 +848,13 @@
                         <div class="product-info">
                             <h3>${escapeHtml(product.name)}</h3>
                             <p class="product-stock">Stock: ${product.stock}</p>
-                            <p class="product-stock">Wholesale: ₹${parseFloat(product.wholesale_price ?? (parseFloat(product.price) * 0.8)).toFixed(2)} / Min Qty ${product.min_wholesale_qty ?? 5}</p>
-                            <div class="product-price">₹${parseFloat(product.price).toFixed(2)}</div>
+                            <p class="product-stock">Wholesale: NPR ${parseFloat(product.wholesale_price ?? (parseFloat(product.price) * 0.8)).toFixed(2)} / Min Qty ${product.min_wholesale_qty ?? 5}</p>
+                            <div class="product-price">NPR ${parseFloat(product.price).toFixed(2)}</div>
                             ${product.description ? `<p>${escapeHtml(product.description.substring(0, 60))}...</p>` : ''}
                             ${product.image_count > 0 ? `<div class="product-images"><span class="badge">${product.image_count} image(s)</span></div>` : ''}
                             <div class="product-actions">
-                                <button class="manage-images-btn" onclick="openImageModal(${product.product_id}, '${escapeHtml(product.name)}')">📷 Images</button>
-                                <button class="edit-btn" onclick="openEditModal(${product.product_id}, '${escapeHtml(product.name)}', '${escapeHtml(product.description || '')}', ${product.price}, ${product.stock}, ${product.wholesale_price ?? 'null'}, ${product.min_wholesale_qty ?? 'null'})">✏️ Edit</button>
+                                <button class="manage-images-btn" onclick="openImageModal(${product.product_id}, ${productNameArg})">Images</button>
+                                <button class="edit-btn" onclick="openEditModal(${product.product_id}, ${productNameArg}, ${productDescriptionArg}, ${product.price}, ${product.stock}, ${product.wholesale_price ?? 'null'}, ${product.min_wholesale_qty ?? 'null'})">Edit</button>
                                 <button class="delete-btn" onclick="confirmDelete(${product.product_id})">Delete</button>
                             </div>
                         </div>
@@ -915,7 +918,7 @@
             }
 
             try {
-                const response = await fetch('http://localhost:8000/api/seller.php?action=update-product', {
+                const response = await fetch(`${BACKEND_ORIGIN}/api/seller.php?action=update-product`, {
                     method: 'POST',
                     body: formData,
                     credentials: 'include'
@@ -1004,7 +1007,7 @@
         async function loadProductGallery(productId) {
             try {
                 const response = await fetch(
-                    `http://localhost:8000/api/products.php?action=get-single&product_id=${productId}`,
+                    `${BACKEND_ORIGIN}/api/products.php?action=get-single&product_id=${productId}`,
                     { credentials: 'include' }
                 );
                 

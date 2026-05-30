@@ -33,6 +33,8 @@
             </div>
         </div>
 
+        <div id="personalizedContent" class="personalized-content hidden"></div>
+
         <div class="main-content">
             <!-- Products Grid -->
             <div class="products-section" style="flex: 1;">
@@ -45,7 +47,7 @@
             <div id="cartSidebar" class="cart-sidebar hidden">
                 <div class="cart-header">
                     <h3>Shopping Cart</h3>
-                    <button onclick="closeCart()" class="close-btn">✕</button>
+                    <button onclick="closeCart()" class="close-btn">&times;</button>
                 </div>
                 <div id="cartContainer" class="cart-items">
                     <!-- Cart items will be loaded here -->
@@ -104,6 +106,8 @@
          */
         function showCart() {
             document.getElementById('cartSidebar').classList.remove('hidden');
+            const personalized = document.getElementById('personalizedContent');
+            if (personalized) personalized.classList.add('hidden');
             loadCart();
         }
 
@@ -112,6 +116,9 @@
          */
         function closeCart() {
             document.getElementById('cartSidebar').classList.add('hidden');
+            if (typeof loadPersonalizedContent === 'function') {
+                loadPersonalizedContent();
+            }
         }
 
         /**

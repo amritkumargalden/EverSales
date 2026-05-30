@@ -64,6 +64,7 @@ async function loadAdminDashboard() {
         renderSellers(data.sellers || []);
         renderProducts(data.products || []);
         renderOrders(data.orders || []);
+        renderFeedback(data.feedback || []);
         renderBanners(data.banners || []);
         renderReports(data.reports || {});
     } catch (error) {
@@ -130,16 +131,22 @@ function renderSellers(sellers) {
 
     container.innerHTML = `
         <table>
-            <thead><tr><th>Seller</th><th>Email</th><th>Products</th><th>Total Stock</th><th>Orders</th><th>Revenue</th></tr></thead>
+            <thead><tr><th>Seller</th><th>Email</th><th>Status</th><th>Products</th><th>Total Stock</th><th>Orders</th><th>Revenue</th><th>Action</th></tr></thead>
             <tbody>
                 ${sellers.map(seller => `
                     <tr>
                         <td>${adminEscape(seller.full_name)}</td>
                         <td>${adminEscape(seller.email)}</td>
+                        <td><span class="status ${Number(seller.is_blocked) === 1 ? 'rejected' : 'approved'}">${Number(seller.is_blocked) === 1 ? 'Blocked' : 'Active'}</span></td>
                         <td>${seller.product_count || 0}</td>
                         <td>${seller.total_stock || 0}</td>
                         <td>${seller.order_count || 0}</td>
                         <td>Rs. ${adminMoney(seller.revenue)}</td>
+                        <td class="action-row">
+                            <button class="mini-btn ${Number(seller.is_blocked) === 1 ? 'approve' : 'reject'}" onclick="toggleSellerBlock(${seller.id}, ${Number(seller.is_blocked) === 1 ? 0 : 1})">
+                                ${Number(seller.is_blocked) === 1 ? 'Unblock' : 'Block'}
+                            </button>
+                        </td>
                     </tr>
                 `).join('')}
             </tbody>
@@ -216,6 +223,55 @@ function renderOrders(orders) {
     `;
 }
 
+function renderFeedback(feedbackItems) {
+    const container = document.getElementById('adminFeedback');
+    if (!container) return;
+
+    if (!feedbackItems || feedbackItems.length === 0) {
+        container.innerHTML = '<p class="empty-admin">No feedback submitted yet.</p>';
+        return;
+    }
+
+    container.innerHTML = `
+        <table>
+            <thead><tr><th>Order</th><th>Customer</th><th>Type</th><th>Rating</th><th>Message</th><th>Status</th><th>Submitted</th><th>Action</th></tr></thead>
+            <tbody>
+                ${feedbackItems.map(item => `
+                    <tr>
+                        <td>#${item.order_id}</td>
+                        <td>${adminEscape(item.user_name)}<small>${adminEscape(item.user_email || '')}</small></td>
+                        <td><span class="status ${item.feedback_type === 'complaint' ? 'rejected' : 'approved'}">${adminEscape(item.feedback_type)}</span></td>
+                        <td>${item.feedback_type === 'review' ? (item.rating || '-') : '-'}</td>
+                        <td>${adminEscape(item.message)}</td>
+                        <td><span class="status ${Number(item.is_resolved) === 1 ? 'approved' : 'pending'}">${Number(item.is_resolved) === 1 ? 'Resolved' : 'Open'}</span></td>
+                        <td>${adminDate(item.created_at)}</td>
+                        <td class="action-row">
+                            ${item.feedback_type === 'complaint' ? `
+                                <button class="mini-btn ${Number(item.is_resolved) === 1 ? 'pending' : 'approve'}" onclick="toggleFeedbackResolve(${item.feedback_id}, ${Number(item.is_resolved) === 1 ? 0 : 1})">
+                                    ${Number(item.is_resolved) === 1 ? 'Reopen' : 'Mark Resolved'}
+                                </button>
+                            ` : '-'}
+                        </td>
+                    </tr>
+                `).join('')}
+            </tbody>
+        </table>
+    `;
+}
+
+async function toggleFeedbackResolve(feedbackId, isResolved) {
+    const confirmText = isResolved ? 'Mark this complaint as resolved?' : 'Reopen this complaint?';
+    if (!confirm(confirmText)) return;
+
+    try {
+        await adminRequest('update-feedback-status', { feedback_id: feedbackId, is_resolved: isResolved });
+        if (typeof showToast === 'function') showToast('Feedback status updated', 'success'); else showMessage('Feedback status updated', 'success');
+        loadAdminDashboard();
+    } catch (error) {
+        if (typeof showToast === 'function') showToast(error.message, 'error'); else showMessage(error.message, 'error');
+    }
+}
+
 function renderBanners(banners) {
     const container = document.getElementById('adminBanners');
     if (!container) return;
@@ -230,7 +286,7 @@ function renderBanners(banners) {
             <div>
                 <strong>${adminEscape(banner.title)}</strong>
                 <p>${adminEscape(banner.subtitle || '')}</p>
-                <small>${banner.is_active == 1 ? 'Active' : 'Hidden'} · Sort ${banner.sort_order || 0}</small>
+                <small>${banner.is_active == 1 ? 'Active' : 'Hidden'} - Sort ${banner.sort_order || 0}</small>
             </div>
             <div class="action-row">
                 <button class="mini-btn" onclick='editBanner(${JSON.stringify(banner).replace(/'/g, '&apos;')})'>Edit</button>
@@ -295,6 +351,22 @@ async function updateOrderStatus(orderId, status) {
     try {
         await adminRequest('update-order-status', { order_id: orderId, status });
         if (typeof showToast === 'function') showToast('Order status updated', 'success'); else showMessage('Order status updated', 'success');
+        loadAdminDashboard();
+    } catch (error) {
+        if (typeof showToast === 'function') showToast(error.message, 'error'); else showMessage(error.message, 'error');
+    }
+}
+
+async function toggleSellerBlock(sellerId, isBlocked) {
+    const confirmText = isBlocked
+        ? 'Block this seller? They will not be able to manage products.'
+        : 'Unblock this seller? They will regain access to seller tools.';
+
+    if (!confirm(confirmText)) return;
+
+    try {
+        await adminRequest('update-seller-status', { seller_id: sellerId, is_blocked: isBlocked });
+        if (typeof showToast === 'function') showToast('Seller status updated', 'success'); else showMessage('Seller status updated', 'success');
         loadAdminDashboard();
     } catch (error) {
         if (typeof showToast === 'function') showToast(error.message, 'error'); else showMessage(error.message, 'error');

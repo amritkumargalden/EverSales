@@ -42,6 +42,9 @@ try {
         case 'overview':
             handleOverview($database, $connection);
             break;
+        case 'update-seller-status':
+            handleUpdateSellerStatus($connection);
+            break;
         case 'update-user-role':
             handleUpdateUserRole($connection);
             break;
@@ -50,6 +53,9 @@ try {
             break;
         case 'update-order-status':
             handleUpdateOrderStatus($connection);
+            break;
+        case 'update-feedback-status':
+            handleUpdateFeedbackStatus($connection);
             break;
         case 'save-banner':
             handleSaveBanner($connection);
@@ -74,6 +80,11 @@ function ensureAdminSchema($connection) {
         $connection->query("ALTER TABLE products ADD COLUMN product_status ENUM('pending', 'approved', 'rejected') NOT NULL DEFAULT 'approved'");
     }
 
+    $sellerBlocked = $connection->query("SHOW COLUMNS FROM users LIKE 'is_blocked'");
+    if ($sellerBlocked && $sellerBlocked->num_rows === 0) {
+        $connection->query("ALTER TABLE users ADD COLUMN is_blocked TINYINT(1) NOT NULL DEFAULT 0");
+    }
+
     $connection->query("
         CREATE TABLE IF NOT EXISTS banners (
             banner_id INT AUTO_INCREMENT PRIMARY KEY,
@@ -87,6 +98,26 @@ function ensureAdminSchema($connection) {
             updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
         )
     ");
+
+    $connection->query("
+        CREATE TABLE IF NOT EXISTS order_feedback (
+            feedback_id INT AUTO_INCREMENT PRIMARY KEY,
+            order_id INT NOT NULL,
+            user_id INT NOT NULL,
+            feedback_type ENUM('review', 'complaint') NOT NULL,
+            rating INT NULL,
+            message TEXT NOT NULL,
+            is_resolved TINYINT(1) NOT NULL DEFAULT 0,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            FOREIGN KEY (order_id) REFERENCES orders(order_id) ON DELETE CASCADE,
+            FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+        )
+    ");
+
+    $resolvedColumn = $connection->query("SHOW COLUMNS FROM order_feedback LIKE 'is_resolved'");
+    if ($resolvedColumn && $resolvedColumn->num_rows === 0) {
+        $connection->query("ALTER TABLE order_feedback ADD COLUMN is_resolved TINYINT(1) NOT NULL DEFAULT 0");
+    }
 }
 
 function handleOverview($database, $connection) {
@@ -103,12 +134,20 @@ function handleOverview($database, $connection) {
         INNER JOIN users u ON u.id = o.user_id
         ORDER BY o.created_at DESC
     ");
+    $feedback = $database->getResults("
+        SELECT f.feedback_id, f.order_id, f.user_id, f.feedback_type, f.rating, f.message, f.is_resolved, f.created_at,
+               u.full_name AS user_name, u.email AS user_email
+        FROM order_feedback f
+        INNER JOIN users u ON u.id = f.user_id
+        ORDER BY f.created_at DESC
+    ");
     $banners = $database->getResults("SELECT * FROM banners ORDER BY sort_order ASC, created_at DESC");
     $sellers = $database->getResults("
         SELECT
             u.id,
             u.full_name,
             u.email,
+            u.is_blocked,
             COUNT(DISTINCT p.product_id) AS product_count,
             COALESCE(SUM(p.stock), 0) AS total_stock,
             COUNT(DISTINCT oi.order_id) AS order_count,
@@ -138,6 +177,7 @@ function handleOverview($database, $connection) {
         'sellers' => $sellers,
         'products' => $products,
         'orders' => $orders,
+        'feedback' => $feedback,
         'banners' => $banners,
         'reports' => $reports
     ]);
@@ -208,6 +248,25 @@ function handleUpdateUserRole($connection) {
     echo json_encode(['success' => true, 'message' => 'User role updated']);
 }
 
+function handleUpdateSellerStatus($connection) {
+    $input = getJsonInput();
+    $sellerId = (int)($input['seller_id'] ?? 0);
+    $isBlocked = (int)($input['is_blocked'] ?? 0);
+
+    if ($sellerId <= 0 || ($isBlocked !== 0 && $isBlocked !== 1)) {
+        http_response_code(400);
+        echo json_encode(['success' => false, 'message' => 'Invalid seller status update']);
+        return;
+    }
+
+    $stmt = $connection->prepare("UPDATE users SET is_blocked = ? WHERE id = ? AND role = 'seller'");
+    $stmt->bind_param('ii', $isBlocked, $sellerId);
+    $stmt->execute();
+    $stmt->close();
+
+    echo json_encode(['success' => true, 'message' => 'Seller status updated']);
+}
+
 function handleUpdateProductStatus($connection) {
     $input = getJsonInput();
     $productId = (int)($input['product_id'] ?? 0);
@@ -246,6 +305,25 @@ function handleUpdateOrderStatus($connection) {
     $stmt->close();
 
     echo json_encode(['success' => true, 'message' => 'Order status updated']);
+}
+
+function handleUpdateFeedbackStatus($connection) {
+    $input = getJsonInput();
+    $feedbackId = (int)($input['feedback_id'] ?? 0);
+    $isResolved = (int)($input['is_resolved'] ?? 0);
+
+    if ($feedbackId <= 0 || ($isResolved !== 0 && $isResolved !== 1)) {
+        http_response_code(400);
+        echo json_encode(['success' => false, 'message' => 'Invalid feedback update']);
+        return;
+    }
+
+    $stmt = $connection->prepare("UPDATE order_feedback SET is_resolved = ? WHERE feedback_id = ?");
+    $stmt->bind_param('ii', $isResolved, $feedbackId);
+    $stmt->execute();
+    $stmt->close();
+
+    echo json_encode(['success' => true, 'message' => 'Feedback status updated']);
 }
 
 function handleSaveBanner($connection) {

@@ -38,6 +38,7 @@
                 <button class="admin-nav" onclick="switchAdminSection('sellers', this)">Seller Management</button>
                 <button class="admin-nav" onclick="switchAdminSection('products', this)">Product Moderation</button>
                 <button class="admin-nav" onclick="switchAdminSection('orders', this)">Order Overview</button>
+                <button class="admin-nav" onclick="switchAdminSection('feedback', this)">Customer Feedback</button>
                 <button class="admin-nav" onclick="switchAdminSection('banners', this)">Banner Management</button>
                 <button class="admin-nav" onclick="switchAdminSection('reports', this)">Sales Reports</button>
             </aside>
@@ -73,6 +74,14 @@
                         <p>Monitor all customer orders and update fulfillment status.</p>
                     </div>
                     <div id="adminOrders" class="list-container"></div>
+                </div>
+
+                <div id="feedbackSection" class="admin-section hidden">
+                    <div class="section-heading">
+                        <h3>Customer Feedback</h3>
+                        <p>Review order reviews and complaints submitted by customers.</p>
+                    </div>
+                    <div id="adminFeedback" class="list-container"></div>
                 </div>
 
                 <div id="bannersSection" class="admin-section hidden">

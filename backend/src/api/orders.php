@@ -27,6 +27,7 @@ require_once __DIR__ . '/../util/Database.php';
 
 $database = new Database();
 $connection = $database->connect();
+ensureFeedbackSchema($connection);
 
 $action = $_GET['action'] ?? 'my-orders';
 $userId = $_SESSION['user_id'] ?? null;
@@ -42,6 +43,9 @@ try {
     switch ($action) {
         case 'create':
             handleCreateOrder($database, $connection, (int) $userId);
+            break;
+        case 'submit-feedback':
+            handleSubmitFeedback($connection, (int) $userId);
             break;
         case 'admin-dashboard':
             if ($userRole !== 'admin') {
@@ -62,6 +66,32 @@ try {
 }
 
 $database->close();
+
+function ensureFeedbackSchema($connection) {
+    $table = $connection->query("SHOW TABLES LIKE 'order_feedback'");
+    if ($table && $table->num_rows === 0) {
+        $connection->query("
+            CREATE TABLE order_feedback (
+                feedback_id INT AUTO_INCREMENT PRIMARY KEY,
+                order_id INT NOT NULL,
+                user_id INT NOT NULL,
+                feedback_type ENUM('review', 'complaint') NOT NULL,
+                rating INT NULL,
+                message TEXT NOT NULL,
+                is_resolved TINYINT(1) NOT NULL DEFAULT 0,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                FOREIGN KEY (order_id) REFERENCES orders(order_id) ON DELETE CASCADE,
+                FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+            )
+        ");
+        return;
+    }
+
+    $resolvedColumn = $connection->query("SHOW COLUMNS FROM order_feedback LIKE 'is_resolved'");
+    if ($resolvedColumn && $resolvedColumn->num_rows === 0) {
+        $connection->query("ALTER TABLE order_feedback ADD COLUMN is_resolved TINYINT(1) NOT NULL DEFAULT 0");
+    }
+}
 
 function handleCreateOrder($database, $connection, $userId) {
     if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
@@ -193,6 +223,93 @@ function handleUserOrders($connection, $userId) {
         'success' => true,
         'orders' => $orders
     ]);
+}
+
+function handleSubmitFeedback($connection, $userId) {
+    if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+        http_response_code(405);
+        echo json_encode(['success' => false, 'message' => 'Method not allowed']);
+        return;
+    }
+
+    $input = json_decode(file_get_contents('php://input'), true);
+    $orderId = (int)($input['order_id'] ?? 0);
+    $type = $input['feedback_type'] ?? '';
+    $rating = isset($input['rating']) ? (int)$input['rating'] : null;
+    $message = trim($input['message'] ?? '');
+
+    if ($orderId <= 0 || !in_array($type, ['review', 'complaint'], true)) {
+        http_response_code(400);
+        echo json_encode(['success' => false, 'message' => 'Invalid feedback details']);
+        return;
+    }
+
+    if ($message === '') {
+        http_response_code(400);
+        echo json_encode(['success' => false, 'message' => 'Feedback message is required']);
+        return;
+    }
+
+    if ($type === 'review') {
+        if ($rating === null || $rating < 1 || $rating > 5) {
+            http_response_code(400);
+            echo json_encode(['success' => false, 'message' => 'Rating must be between 1 and 5']);
+            return;
+        }
+    } else {
+        $rating = null;
+    }
+
+    $orderStmt = $connection->prepare("SELECT order_id FROM orders WHERE order_id = ? AND user_id = ? LIMIT 1");
+    if (!$orderStmt) {
+        http_response_code(500);
+        echo json_encode(['success' => false, 'message' => 'Failed to verify order']);
+        return;
+    }
+
+    $orderStmt->bind_param('ii', $orderId, $userId);
+    $orderStmt->execute();
+    $orderResult = $orderStmt->get_result();
+    $orderStmt->close();
+
+    if (!$orderResult || $orderResult->num_rows === 0) {
+        http_response_code(404);
+        echo json_encode(['success' => false, 'message' => 'Order not found']);
+        return;
+    }
+
+    $checkStmt = $connection->prepare("SELECT feedback_id FROM order_feedback WHERE order_id = ? AND user_id = ? AND feedback_type = ? LIMIT 1");
+    if ($checkStmt) {
+        $checkStmt->bind_param('iis', $orderId, $userId, $type);
+        $checkStmt->execute();
+        $existing = $checkStmt->get_result();
+        $checkStmt->close();
+
+        if ($existing && $existing->num_rows > 0) {
+            http_response_code(409);
+            echo json_encode(['success' => false, 'message' => 'Feedback already submitted for this order']);
+            return;
+        }
+    }
+
+    $stmt = $connection->prepare("INSERT INTO order_feedback (order_id, user_id, feedback_type, rating, message) VALUES (?, ?, ?, ?, ?)");
+    if (!$stmt) {
+        http_response_code(500);
+        echo json_encode(['success' => false, 'message' => 'Failed to save feedback']);
+        return;
+    }
+
+    if ($rating === null) {
+        $nullValue = null;
+        $stmt->bind_param('iisis', $orderId, $userId, $type, $nullValue, $message);
+    } else {
+        $stmt->bind_param('iisis', $orderId, $userId, $type, $rating, $message);
+    }
+
+    $stmt->execute();
+    $stmt->close();
+
+    echo json_encode(['success' => true, 'message' => 'Feedback submitted']);
 }
 
 function handleAdminDashboard($database, $connection) {

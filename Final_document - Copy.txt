@@ -1,0 +1,498 @@
+A Project Report on
+Eversales
+Submitted in partial fulfilment of the requirement of
+ �Project � V (BIT356CO)
+
+Bachelor of Information Technology � V
+Submitted to
+
+Purbanchal University
+Biratnagar, Nepal
+Submitted by
+Amrit Kumar Tamang (350544)
+Nisha Tamang (350561)
+Prasuna Shahi Dulal (350565)
+
+KANTIPUR CITY COLLEGE
+Putalisadak, Kathmandu
+2026
+Project Report on
+Eversales
+Submitted in partial fulfilment of the requirement of
+ Project � V (BIT256CO)
+
+Bachelor of Information Technology � V Semester
+Submitted to
+Purbanchal University
+Biratnagar, Nepal
+
+Submitted by
+Amrit Kumar Tamang (350544)
+Nisha Tamang (350561)
+Prasuna Shahi Dulal (350565)
+Project Supervisor
+Bimochan Khadka
+Er. Maryada Karki
+
+KANTIPUR CITY COLLEGE
+Putalisadak, Kathmandu
+2026
+Abstract
+The Eversales system is a web-based platform designed to support both retail and wholesale buying and selling within a single system. The application allows buyers to browse products, add items to a cart, place orders, track delivery status, and generate invoices. Sellers can register as retailers or wholesalers and manage products with flexible pricing based on quantity, enabling bulk purchasing at discounted rates. The system also supports promotional features such as discounts, promo codes, and buy-one-get-one offers to improve customer engagement and sales.
+Additionally, the application includes an admin module that manages seller approval, monitoring, and blocking to maintain platform reliability and security. Buyers can provide product ratings and reviews, helping improve trust and product quality transparency. The project aims to bridge the gap between traditional retail e-commerce and wholesale markets by providing a centralized, user-friendly, and efficient digital marketplace for buyers and sellers.
+
+Acknowledgement
+We would like to express our sincere gratitude to all those who have supported and encouraged us throughout the development of this project. First and foremost, we extend our heartfelt thanks to the entire team at Kantipur City College (KCC) for providing us with the opportunity to work on this project, especially the professors from the BIT department, whose guidance has greatly contributed to our understanding and growth in this field. 
+We would like to give a special acknowledgement to our supervisor, Mr. Bimochan Khadka and Er. Maryada Karki, for his unwavering support and invaluable advice. His consistent encouragement, insightful suggestions, and vast knowledge have played a pivotal role in shaping the success of this project. We are deeply grateful for his mentorship, which has been instrumental in bringing this project to completion. 
+Our sincere thanks also go to all the members of our class, whose collaborative spirit, suggestions, and shared experiences have enriched the process of this project. We appreciate the constant exchange of ideas and the constructive feedback we received from our peers. 
+Lastly, we would like to express our gratitude to our friends and colleagues, who, through both direct and indirect support, helped make this project a reality. Their encouragement and assistance have been a source of motivation throughout this journey. 
+
+
+Preface
+This project entitled Eversales has been prepared as a part of the academic requirement for the study of RDBMS and Web Application Development using PHP. The project aims to develop a dynamic and user-friendly e-commerce website that allows users to purchase products online conveniently and efficiently.
+The rapid growth of internet technology and e-commerce systems has changed the traditional way of shopping. Online shopping websites provide customers with easy access to products, secure transactions, and time-saving services. Keeping these aspects in mind, the �Eversales� system has been designed and developed to provide essential online shopping functionalities such as user registration, product browsing, shopping cart management, order placement, and database management.
+The project is developed using PHP as the server-side scripting language along with HTML, CSS, JavaScript, and MySQL (RDBMS) for database management. The relational database system is used to store and manage customer information, product details, orders, and other related data systematically and securely. The project has provided practical knowledge and hands-on experience in web development, database connectivity, session handling, and CRUD operations.
+We would like to express my sincere gratitude to all teachers, supervisors, and friends who provided valuable guidance, encouragement, and support throughout the completion of this project. Their suggestions and motivation greatly contributed to the successful development of this system.
+We hope this project documentation will serve as a valuable reference for understanding the concepts of RDBMS and PHP-based web application development.
+
+Supervisor�s Approval 
+This is to certify that the major project entitled Eversales undertaken and demonstrated by Amrit Kumar Tamang, Nisha Tamang and Prasuna Shahi Dulal, has been successfully completed under my supervision as partial fulfillment of the requirements for the degree of BIT, fifth semester under Purbanchal University. I, henceforth, approve this project to be awarded the certificate by the concerned authority. During supervision, I found students hardworking, skilled and ready to undertake any professional work related to this field in future. 
+
+____________________
+____________________
+Mr. Bimochan Khadka
+Kantipur City College 
+Date:
+Er. Maryada Karki
+
+
+
+ 	 
+
+
+Certificate From Department 
+Following the Supervisor�s Approval and Examiners� Acceptance, the project entitled Eversales submitted by Amrit Kumar Tamang, Nisha Tamang and Prasuna Shahi Dulal as a partial fulfillment of the requirements for the degree of BIT, 5th semester under Purbanchal University, has been officially awarded by this certificate. I wish the students all the best for their future endeavors. 
+ 
+___________________ 
+Mr. Saroj Pandey 
+Head of  Department 
+Date:  	
+Table of Content
+Abstract	III
+Acknowledgement	IV
+Preface	V
+Supervisor�s Approval	VI
+Certificate From Department	VII
+Chapter 1: Introduction	1
+1.1 Overview	1
+1.2 Problem Statement	1
+1.3 Objective	2
+1.4 Features	2
+1.4.1 Core Features	2
+1.4.2 Retail Buyer Features	2
+1.4.3 Wholesale Buyer Features	3
+1.4.4. Seller Features	3
+1.4.5. Admin Feature	3
+1.5	Scope and Limitations	3
+Chapter 2: Literature review	5
+2.1 Alibaba online shopping website	5
+2.1.1 Pros:	5
+2.1.2 Cons:	5
+2.2 Vistaar trade	5
+2.2.1 Pros:	6
+2.2.2 Cons:	6
+2.3 Daraz app	6
+2.3.1 Pros:	6
+2.3.2 Cons:	7
+Chapter 3: Methodology	8
+3.1 Software Development Life Cycle	8
+3.2 System Design	9
+3.3 Assignment of Roles and Responsibilities	10
+Chapter 4: System Analysis	11
+4.1 Requirement Analysis	11
+4.1.1 Requirement Gathering	11
+4.1.2 Functional Requirements	11
+4.2 Feasibility Study	12
+4.2.1 Technical Feasibility	12
+4.2.2 Economic Feasibility	12
+4.2.3 Schedule Feasibility	12
+Chapter 5: System Design	14
+5.1 System Architecture	14
+5.1.1 Context Level (level 0) DFD	15
+5.1.4 ER diagram	18
+Chapter 6: System and Implementation	19
+6.1 Programming Platform	19
+6.2 Operating Environment	20
+6.2.1 Hardware Requirements	20
+6.2.2 Software Requirements	20
+6.3 Testing Environment	20
+Chapter 7: Testing and Debugging	21
+7.1 Tools Used in Testing	21
+7.2 Test Cases	21
+7.3 Debugging Summary	23
+Chapter 8: Conclusion	24
+Chapter 9: Future Recommendations	25
+Chapter 10: References	26
+
+
+
+List of Figure
+Figure 5.1: Context Diagram	15
+Figure 5.2: Level 1 DFD	16
+Figure 5.3: Use case Diagram	17
+Figure 5.4: ER Diagram	18
+
+List of Tables
+Table 3.1: Assignment of Roles and Responsibilities	10
+Table 4.1: Gannt chart	13
+Table 7.1: Tools Used in Testing	21
+Table 7.2: Testing and Debugging	22
+
+
+
+Chapter 1: Introduction
+In the modern digital era, online shopping systems have become an essential part of daily life. People prefer online shopping because it provides convenience, saves time, and allows customers to purchase products from anywhere through the internet. E-commerce websites help businesses reach a larger number of customers and manage their products and services efficiently. The growing use of web technologies has increased the demand for secure and user-friendly online shopping platforms.
+The project �Eversales� is an online shopping web application developed using PHP and RDBMS (MySQL). The system is designed to provide customers with an easy platform to browse products, create accounts, add items to a shopping cart, and place orders online at retail and wholesale rates. It also helps administrators manage products, customer information, and orders effectively through a centralized database system. This project provides practical knowledge of web development, database management, and dynamic website creation using PHP and MySQL.
+1.1 Overview
+�Eversales� is an online shopping web application developed using PHP and Relational Database Management System (RDBMS). The system is designed to provide users with a convenient platform for purchasing products online. The website allows customers to browse products, create accounts, add products to a shopping cart, and place orders easily through the internet.
+The project aims to digitalize the traditional shopping system by providing a secure, fast, and user-friendly online shopping experience. The system also helps administrators manage products, customers, and orders efficiently through a centralized database system. Technologies such as HTML, CSS, JavaScript, PHP, and MySQL are used to develop the application.
+1.2 Problem Statement
+Traditional shopping systems require customers to visit physical stores to purchase products, which can be time-consuming and inconvenient. Many small businesses also face difficulties in managing product records, customer details, and sales manually.
+Some common problems in traditional shopping systems are:
+* Time-consuming shopping process 
+* Limited shopping hours 
+* Difficulty in managing customer and product records manually 
+* Lack of proper data organization 
+* Increased chances of human errors in billing and record keeping 
+* To solve these problems, the �Eversales� online shopping website has been developed. The system provides an easy and efficient way for users to shop online and for administrators to manage products and customer data digitally.
+1.3 Objective
+* To design and develop a secure, scalable online shopping website for efficient product browsing, ordering, and management
+* Enable seller to list product with retail and wholesale pricing 
+1.4 Features
+1.4.1 Core Features
+* User registration (Sign Up) 
+* User login/logout 
+* Secure authentication for all users 
+* Separate access for: 
+* Retail Buyer 
+* Wholesale Buyer 
+* Seller 
+* Admin
+1.4.2 Retail Buyer Features
+* Product Browsing
+* Add to Cart
+* Retail Order Management
+* Order Cancellation
+1.4.3 Wholesale Buyer Features
+* MOQ (Minimum Order Quantity) Ordering
+* Wholesale Cart Management
+* MOQ Order Management
+* Wholesale Order Cancellation
+1.4.4. Seller Features
+* Product Management
+* Quantity-Based Pricing Management
+* Order Management
+* MOQ Order Handling
+1.4.5. Admin Feature
+* User Management
+* Content Management
+* System Monitoring
+1.5  Scope and Limitations
+The Eversales System is a web-based ecommerce platform developed to support both retail and wholesale business operations within a single system. The project focuses on simplifying the process of product purchasing, order management, and user management for different types of users such as retail buyers, wholesale buyers, sellers, and administrators. The system allows sellers to manage products, stock, and quantity-based pricing, while buyers can browse products, add items to cart, place orders, and cancel orders when required. A major scope of the project is the implementation of MOQ (Minimum Order Quantity) order management, which enables wholesale buyers to purchase products in bulk at discounted prices. The system also provides authentication, role-based access control, order processing, and database management to ensure smooth communication between users and the platform. Overall, the project aims to create an efficient and centralized ecommerce solution suitable for both small-scale retail transactions and large-scale wholesale purchasing activities.
+Limitations of the Ever Sales System
+* The system may not support advanced online payment gateway integration. 
+* Real-time shipment and delivery tracking features are not available. 
+* The platform requires a stable internet connection to function properly. 
+* Advanced security mechanisms such as two-factor authentication are not implemented. 
+* Performance may decrease when handling a very large number of users or transactions. 
+* The system does not provide AI-based product recommendations or analytics. 
+* Inventory management features are limited to basic stock handling. 
+* Mobile application support may not be available. 
+* MOQ pricing and quantity settings require manual configuration by the seller. 
+* Multi-language and multi-currency support are not included in the current system.
+
+
+Chapter 2: Literature review
+Online shopping systems have become an important part of modern e-commerce by allowing customers to purchase products through web-based platforms. Many researchers and developers have focused on building online shopping applications that provide basic functionalities such as product browsing, cart management, and order placement. 
+ 2.1 Alibaba online shopping website
+Alibaba.com is one of the world�s largest online B2B (business-to-business) marketplaces, connecting suppliers and buyers from around the globe. Launched in 1999, it has grown into an extensive e-commerce ecosystem that supports bulk purchasing and international trade for small, medium, and large enterprises. Alibaba.com�s core functionality centers on linking global sellers with business buyers. The platform provides powerful sourcing tools, advanced search filters, and detailed supplier profiles, enabling buyers to efficiently identify and negotiate with multiple manufacturers.
+2.1.1 Pros:
+* Large global marketplace connecting buyers and suppliers worldwide
+* Supports bulk purchasing and wholesale pricing
+* Provides minimum order quantity (MOQ) system for wholesale trading
+* Wide variety of product categories available
+2.1.2 Cons:
+* Mainly focused on B2B wholesale, not ideal for normal retail buyers
+* Communication and negotiation may take time
+* Risk of scam if buyers do not verify suppliers properly
+2.2 Vistaar trade    
+Vistaar Trade is one of Nepal�s earliest online B2B wholesale marketplaces, designed to digitally connect buyers and suppliers across the country. It provides a platform where businesses can list products in bulk and reach potential wholesale customers using web technologies. It provides sellers with a dashboard to upload, manage, and track products, helping businesses generate leads and increase sales across Nepal. Its features include easy product listing and direct product access via QR codes, which simplify the bulk purchasing process.
+2.2.1 Pros:
+* Helps businesses connect with suppliers and buyers digitally
+* Allow sellers to list and manage products online
+* Provides seller dashboard for product management
+* Supports bulk product promotion and lead generations
+2.2.2 Cons:
+* Limited availability of public customer reviews and feedback
+* Possible trust issues between buyers and sellers (common in new online platforms)
+* May not fully support retail buyers, as it mainly targets wholesalers and businesses
+* Limited features compared to global platforms like Alibaba (example: global supplier verification, trade assurance, etc.)
+
+2.3 Daraz app
+Daraz is one of the leading e-commerce platforms in Nepal and South Asia, serving as a marketplace where buyers can purchase a wide range of products such as electronics, clothing, groceries, and household items through an app and website. Research has shown that Daraz appeals to consumers due to price competitiveness, variety of categories, and promotional campaigns that attract buyers through discounts and deals. The platform uses data-driven personalization, suggesting products based on browsing history and purchase patterns. Daraz also introduced features such as D-Mall for branded products with return policies, increasing buyer confidence.
+2.3.1 Pros:
+* Offers many products across categories at competitive prices.
+* Easy navigation and organized product browsing (according to some reviews).
+* Frequent deals, flash sales, and coupons help users save money.
+2.3.2 Cons:
+* Return processes can be difficult, and refunds may be delayed or complicated.
+* Items received often differ from descriptions or may be of low quality. 
+Chapter 3: Methodology 
+The Ever Sales System will be developed as a web-based online shopping and wholesale platform serving four distinct user roles: retail buyer, wholesale buyer, seller, and admin. The system will be built using a modern web technology stack comprising React.js for the frontend, Node.js with Express.js for the backend server, and MySQL as the relational database management system. By leveraging JavaScript as a unified language across both the client and server layers, the development team can maintain consistency and efficiency throughout the codebase. The application will implement RESTful API architecture to handle communication between the frontend and backend, with JSON Web Tokens (JWT) used for secure session management and role-based access control across all user types.
+3.1 Software Development Life Cycle
+The Ever Sales System is developed following the Agile Software Development Life Cycle (SDLC). This methodology was selected because it supports iterative development, allowing the team to deliver functional modules incrementally and refine each one based on testing feedback before proceeding to the next. Given the complexity of the system - which must simultaneously support retail purchasing, wholesale bulk ordering with MOQ validation, seller product and order management, and a comprehensive admin control panel - the Agile approach ensures that each role's features are thoroughly developed and tested before integration. The four primary phases of the SDLC applied to this project are as follows:
+Requirements: Through comprehensive analysis of the system context diagram and
+DFD Level 1, combined with review of existing e-commerce and wholesale platforms, the key functional requirements of the Ever Sales System were identified. These include user authentication with role-based access for retail buyers, wholesale buyers, sellers, and admins; product browsing and search; add to cart; promo code application; retail and wholesale order placement with cancellation; MOQ validation and wholesale pricing; seller product management including pricing, inventory, and variants; seller order management covering dispatch, status tracking, and order history: seller-buyer.
+3.2 System Design
+Detailed system architecture was designed based on the confirmed requirements. This includes the database scheme covering all twelve data stores identified in the DFD Level 1, the MVC (Model-View-Controller) architectural pattern to ensure separation of concerns and maintainability, user interface wireframes for all four role-specific dashboards, and the full DFD documentation at both Level 0 and Level 1 using Gane-Sarson notation. A project timeline with clear milestones was established to guide the development process across the fourteen-week schedule.
+
+
+3.3 Assignment of Roles and Responsibilities
+Table 3.1: Assignment of Roles and Responsibilities
+Member Name  
+Roles and Responsibilities  
+ 
+Amrit Kumar Tamang
+Coding: Database and Backend Core 
+Documentation:  
+* ER diagram
+* Database Design 
+* Testing and debugging 
+ 
+ 
+Nisha Tamang  
+ Coding: Frontend 
+Documentation: 
+* Methodology 
+* Use-case diagram
+* System Development and Implementation  
+* Future Recommendations
+ 
+ 
+Prasuna Shahi Dulal  
+Coding: User Interface and Application flow 
+Documentation: 
+* Introduction 
+* Literature Review 
+* System Analysis  
+* DFD
+* Conclusion 
+
+Chapter 4: System Analysis
+System analysis is one of the most important phases of the project development process. It focuses on understanding the problems in the existing system and identifying the requirements needed for the proposed system. In this project, we studied the traditional buying and selling process where customers and sellers face difficulties such as limited product accessibility, time consumption, lack of proper management, and manual record handling. The proposed system, Eversales, is designed to overcome these limitations by providing an online platform for retail and wholesale shopping.
+4.1 Requirement Analysis
+The system is designed to efficiently manage online buying and selling activities by allowing sellers to upload products and customers to purchase them easily. The requirement analysis phase ensures that the system fulfills the expectations of users and supports the business process effectively before implementation.
+4.1.1 Requirement Gathering
+Requirements were gathered through the study of existing online shopping systems, discussions with users, and analysis of e-commerce management needs. Information related to customer details, seller information, product categories, product pricing, orders, and payment processes were collected. These requirements were used as the foundation for designing and developing the Eversales system.
+4.1.2 Functional Requirements
+This phase describes the major functions and services that the system should perform. The following are the functional requirements of the system:
+* Enable administrators to add, update, and manage seller and customer details.
+* Allow sellers to upload, edit, and manage product information.
+* Manage product categories, retail prices, and wholesale prices.
+* Allow customers to browse, search, and purchase products online.
+* Maintain order details and transaction records.
+* Provide login and authentication features for users.
+* Generate reports related to products, users, and orders.
+4.2 Feasibility Study
+The feasibility study determines whether the project is practical and achievable within the available resources and time. In this phase, the technical, economic, and schedule feasibility of the Eversales system were analyzed to ensure successful implementation.
+4.2.1 Technical Feasibility
+The project is technically feasible because it uses widely available technologies such as PHP, MySQL, HTML, CSS, JavaScript, and Visual Studio Code. The required hardware and software resources are easily accessible, and the development team has sufficient knowledge to implement the system successfully.
+4.2.2 Economic Feasibility
+The system is economically feasible because it uses open-source and freely available tools such as PHP, MySQL, and Visual Studio Code. The development cost is low, and the system helps reduce manual business operations, paperwork, and management costs, providing long-term benefits to users and businesses.
+4.2.3 Schedule Feasibility
+The project is scheduled feasible because it can be completed within the allocated period. The development activities, including system design, database creation, coding, testing, and implementation, were planned properly and distributed among team members to ensure timely completion of the project.
+
+
+
+Table 4.1: Gannt chart
+ 
+
+Chapter 5: System Design 
+5.1 System Architecture
+The Ever Sales System follows a three-tier web application architecture consisting of the Presentation Layer, Application Layer, and Database Layer. The system supports retail buyers, wholesale buyers, sellers, and administrators through a centralized ecommerce platform.
+The Presentation Layer provides the user interface where users can log in, browse products, manage carts, place orders, and manage products. The Application Layer handles the business logic such as authentication, order processing, MOQ validation, quantity-based pricing, and product management. The Database Layer stores data related to users, products, carts, retail orders, and wholesale MOQ orders.
+The architecture supports role-based access control, allowing each user type to access specific functionalities. This structure ensures smooth communication, efficient data management, and organized retail and wholesale ecommerce operations
+5.1.1 Context Level (level 0) DFD
+
+Figure 5.1: Context Diagram
+5.1.2  DFD Level 1
+
+
+Figure 5.2: Level 1 DFD
+
+
+
+
+5.1.3 Use-case Diagram
+
+
+Figure 5.3: Use case Diagram
+5.1.4 ER diagram
+
+Figure 5.4: ER Diagram
+
+
+Chapter 6: System and Implementation
+6.1 Programming Platform
+In this project, we used a programming platform consisting of the software development environment and tools required to design, develop, and test the application efficiently. The main components of the programming platform are:
+Programming Language
+The Eversales project is developed using PHP along with HTML, CSS, JavaScript, and MySQL. PHP is a widely used server-side scripting language that is suitable for developing dynamic web applications. HTML and CSS are used for designing the structure and layout of web pages, while JavaScript is used to add interactivity and improve user experience.
+Integrated Development Environment (IDE)
+The main IDE used for developing, debugging, and managing the project is Visual Studio Code (VS Code). VS Code is lightweight, fast, and supports various extensions useful for web development such as PHP extensions, Live Server, and MySQL tools. Its integrated terminal, intelligent code suggestions, and debugging features help in efficient development and project management.
+Database Management System
+MySQL is used as the relational database management system for storing and managing data related to users, products, orders, and transactions. It provides efficient data handling, security, and easy integration with PHP.
+Libraries and Frameworks
+The project uses Bootstrap for responsive user interface design and JavaScript libraries for enhancing website interactivity. PHP libraries and MySQL functions are used to manage database connectivity and perform CRUD (Create, Read, Update, Delete) operations efficiently.
+
+6.2 Operating Environment
+6.2.1 Hardware Requirements
+* Processor: Intel Core i5 or higher for smooth execution of the development environment and web application.
+* RAM: Minimum 8 GB RAM for handling IDE, web server, and database operations efficiently.
+* Storage: At least 20 GB of free disk space for project files, software tools, and database storage.
+* Display: Monitor with minimum resolution of 1920 � 1080 for proper visualization of the application interface.
+6.2.2 Software Requirements
+* Operating System: Windows 10 or Windows 11.
+* Programming Languages: PHP, HTML, CSS, and JavaScript.
+* Database Management System: MySQL.
+* Integrated Development Environment: Visual Studio Code (VS Code).
+* Web Server: XAMPP or WAMP server for running PHP and MySQL.
+* Additional Tools: Required VS Code extensions and browser tools for testing and debugging.
+6.3 Testing Environment
+The Eversales project was tested using the above hardware and software setup to ensure proper functionality, performance, and reliability of the system. The testing environment ensured smooth interaction between the web application and the MySQL database. Different modules such as user login, product management, order handling, and database connectivity were tested to verify that the system works correctly.
+The application was also tested for usability, performance, and stability under normal operating conditions to ensure that it runs efficiently without errors, crashes, or delays.
+Successful testing confirmed that the Eversales system performs as expected and provides a reliable platform for online retail and wholesale shopping.
+Chapter 7: Testing and Debugging
+Testing is an essential phase in the development of the Eversales project to ensure that the application functions properly and is free from major errors. This process involves testing individual modules, integration between components, database connectivity, and overall system performance. The project was tested on different environments including Windows-based laptops using sample data for users, products, orders, and transactions to verify the functionality of the online shopping system. Both manual testing and debugging techniques were used to identify and solve errors during development.
+7.1 Tools Used in Testing
+Table 7.1: Tools Used in Testing
+S. N
+Tool
+Specifications
+1
+Hardware
+Computer/Laptop with minimum 4GB RAM and Intel i5 Processor
+2
+Web Browser
+Google Chrome and Microsoft Edge
+3
+Testing Software
+Manual testing using XAMPP server, MySQL database testing with phpMyAdmin
+7.2 Test Cases
+The following test cases represent important scenarios tested to validate the functionality and reliability of the Eversales system.
+
+
+Table 7.2: Testing and Debugging
+ID
+Test Case Name
+Test Case Description
+Test Data
+Expected Result
+Actual Result
+Status
+01
+User Login with Valid Credentials
+User logs in with correct email and password
+Email: valid user, Password: valid password
+User logs in successfully
+User logged in successfully
+Success
+02
+User Login with Invalid Credentials
+User tries to log in with empty or incorrect details
+Email: empty, Password: empty
+Error message displayed
+Error message displayed successfully
+Success
+03
+User register with valid contact number
+User logs in with exact 10 integer
+Contact number: valid
+User register number successfully
+User registered successfully
+Success 
+04
+Add Product
+Seller adds a new product with valid details
+Product Name: Shoes, Price: 2500
+Product saved successfully
+Product saved successfully
+Success
+05
+Upload image for product
+Seller uploads image  of product
+Product Name: Shoes, Image: shoes.jpg
+Product saved successfully
+Error messaged displayed for image error
+Failure
+06
+Upload image for product
+Seller edits image of product
+Product Name: Shoes, Image: shoes.jpg
+Image updated successfully
+Image updated successfully 
+Success
+07
+Product Search
+Customer searches for available products
+Keyword: Shoes
+Matching products displayed
+Products displayed successfully
+Success
+08
+Place Order
+Customer places an order for selected product
+Product ID: 101, Quantity: 2
+Order placed successfully
+Order placed successfully
+Success
+
+7.3 Debugging Summary
+* Used VS Code debugging tools to identify and solve coding errors.
+* Fixed database connection issues caused by incorrect MySQL configuration.
+* Resolved input validation problems by adding form validation checks.
+* Improved error handling to display user-friendly messages.
+* Verified product management and order transactions to ensure data accuracy.
+* Fixed login and authentication issues for users and sellers.
+
+
+Chapter 8: Conclusion 
+The Eversales project successfully addresses the challenges of traditional buying and selling systems by providing an efficient, reliable, and user-friendly online shopping platform. The system effectively manages users, products, orders, and transactions while allowing sellers to manage their products and customers to purchase items conveniently. This project the main objective of simplifying retail and wholesale shopping through a web-based application.
+The significance of this project lies in its ability to reduce manual work, save time, and improve accessibility for both buyers and sellers. By integrating a secure database with an interactive web interface, the system provides efficient product management and smooth transaction handling. The successful implementation of Eversales demonstrates that web technologies and database management systems can provide an effective solution for modern e-commerce business operations.
+
+
+Chapter 9: Future Recommendations
+To further improve the Eversales system, it is recommended to develop a mobile application version that allows users to shop more conveniently using smartphones and tablets. Additional payment gateway integration such as eSewa, Khalti, and online banking can be added to support secure online payments. Advanced product recommendation systems based on customer interests and purchase history can also improve user experience.
+Furthermore, adding features such as whole price product purchasing, product reviews and ratings, delivery tracking, and same product on retail price also would make the system more advanced and user-friendly. Security can also be enhanced by implementing stronger authentication methods and data encryption techniques to protect user information. These future improvements will help make Eversales more scalable, efficient, and suitable for real-world online shopping businesses.
+
+
+Chapter 10: References
+* �Alibaba Online Marketplace.� Alibaba.com, 2025, www.alibaba.com. Accessed 26 May 2026.
+* �Online Shopping Platform in Nepal.� Daraz Nepal, 2025, www.daraz.com.np. Accessed 26 May 2026.
+* �The Largest Wholesale Market in Nepal.� Vistaar Trade, 2025, www.vistaartrade.com. Accessed 26 May 2026.
+
+
+
+
+
+
+2
+
+
+
+
+2
+
+
+2
+
+

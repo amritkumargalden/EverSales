@@ -3,7 +3,7 @@
  * Handles seller-related requests to the PHP backend
  */
 
-const SELLER_API_URL = 'http://localhost:8000/api/seller.php';
+const SELLER_API_URL = `${BACKEND_ORIGIN}/api/seller.php`;
 
 /**
  * Upgrade current user to seller

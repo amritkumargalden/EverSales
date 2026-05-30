@@ -3,7 +3,10 @@
  * Handles all requests to the PHP backend
  */
 
-const BACKEND_ORIGIN = 'http://localhost:8000';
+const APP_BASE_PATH = window.location.pathname.includes('/frontend/')
+    ? window.location.pathname.split('/frontend/')[0]
+    : '';
+const BACKEND_ORIGIN = `${window.location.origin}${APP_BASE_PATH}/backend/src`;
 const API_URL = `${BACKEND_ORIGIN}/api/auth.php`;
 const ASSET_API_URL = `${BACKEND_ORIGIN}/api/asset.php`;
 
@@ -24,8 +27,41 @@ function resolveBackendAssetUrl(assetPath) {
  * Check if user is logged in
  */
 async function isLoggedIn() {
-    const token = localStorage.getItem('auth_token');
-    return !!token;
+    try {
+        const response = await fetch(`${API_URL}?action=me`, {
+            credentials: 'include'
+        });
+
+        const data = await response.json();
+
+        if (!response.ok || !data.success || !data.user) {
+            clearStoredUser();
+            return false;
+        }
+
+        storeUser(data.user);
+        return true;
+    } catch (error) {
+        console.error('Session check error:', error);
+        clearStoredUser();
+        return false;
+    }
+}
+
+function storeUser(user) {
+    localStorage.setItem('user_id', user.id);
+    localStorage.setItem('user_email', user.email || '');
+    localStorage.setItem('user_name', user.full_name || user.name || '');
+    localStorage.setItem('user_role', user.role || 'customer');
+    localStorage.setItem('auth_token', 'session_active');
+}
+
+function clearStoredUser() {
+    localStorage.removeItem('user_id');
+    localStorage.removeItem('user_email');
+    localStorage.removeItem('user_name');
+    localStorage.removeItem('user_role');
+    localStorage.removeItem('auth_token');
 }
 
 /**
@@ -48,12 +84,7 @@ async function login(email, password) {
         const data = await response.json();
 
         if (data.success) {
-            // Store user info in localStorage
-            localStorage.setItem('user_id', data.user.id);
-            localStorage.setItem('user_email', data.user.email);
-            localStorage.setItem('user_name', data.user.full_name);
-            localStorage.setItem('user_role', data.user.role);
-            localStorage.setItem('auth_token', 'logged_in');
+            storeUser(data.user);
 
             if (typeof showToast === 'function') showToast('Login successful!', 'success'); else showMessage('Login successful!', 'success');
             setTimeout(() => {
@@ -116,12 +147,7 @@ async function logout() {
             credentials: 'include'
         });
 
-        // Clear localStorage
-        localStorage.removeItem('user_id');
-        localStorage.removeItem('user_email');
-        localStorage.removeItem('user_name');
-        localStorage.removeItem('user_role');
-        localStorage.removeItem('auth_token');
+        clearStoredUser();
 
         window.location.href = 'login.html';
     } catch (error) {
@@ -165,7 +191,7 @@ function showToast(message, type = 'info', timeout = 4000) {
 
     const closeBtn = document.createElement('button');
     closeBtn.className = 'close-btn';
-    closeBtn.innerHTML = '×';
+    closeBtn.innerHTML = '&times;';
     closeBtn.onclick = () => {
         toast.classList.remove('show');
         setTimeout(() => toast.remove(), 220);

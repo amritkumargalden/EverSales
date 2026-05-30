@@ -45,21 +45,30 @@ function renderOrderList(containerId, orders, emptyMessage) {
             <tr>
                 <td>${escapeOrderHtml(item.product_name)}</td>
                 <td>${item.quantity}</td>
-                <td>₹${formatOrderMoney(item.price)}</td>
-                <td>₹${formatOrderMoney(item.line_total)}</td>
+                <td>NPR ${formatOrderMoney(item.price)}</td>
+                <td>NPR ${formatOrderMoney(item.line_total)}</td>
             </tr>
         `).join('');
+
+        const feedbackActions = order.status === 'completed'
+            ? `
+                <div class="action-row" style="margin-top: 0.75rem;">
+                    <button class="mini-btn approve" onclick="openFeedbackModal(${order.order_id}, 'review')">Leave Review</button>
+                    <button class="mini-btn reject" onclick="openFeedbackModal(${order.order_id}, 'complaint')">Report Issue</button>
+                </div>
+            `
+            : '';
 
         return `
             <div class="order-card" style="margin-bottom: 1.5rem; padding: 1rem; border: 1px solid #ecf0f1; border-radius: 8px;">
                 <div style="display: flex; justify-content: space-between; gap: 1rem; flex-wrap: wrap; align-items: center; margin-bottom: 1rem;">
                     <div>
                         <h3 style="margin-bottom: 0.25rem;">Order #${order.order_id}</h3>
-                        <p style="margin: 0; color: #7f8c8d;">${escapeOrderHtml(order.user_name || 'Customer')} · ${formatOrderDate(order.created_at)}</p>
+                        <p style="margin: 0; color: #7f8c8d;">${escapeOrderHtml(order.user_name || 'Customer')} - ${formatOrderDate(order.created_at)}</p>
                     </div>
                     <span class="status ${escapeOrderHtml(order.status)}">${escapeOrderHtml(order.status)}</span>
                 </div>
-                <p><strong>Total:</strong> ₹${formatOrderMoney(order.total_amount)}</p>
+                <p><strong>Total:</strong> NPR ${formatOrderMoney(order.total_amount)}</p>
                 <table>
                     <thead>
                         <tr>
@@ -73,6 +82,7 @@ function renderOrderList(containerId, orders, emptyMessage) {
                         ${itemsHtml}
                     </tbody>
                 </table>
+                ${feedbackActions}
             </div>
         `;
     }).join('');
@@ -119,11 +129,136 @@ async function placeOrder(cart) {
         }
 
         if (typeof showToast === 'function') showToast(`Order #${data.order_id} placed successfully!`, 'success'); else showMessage(`Order #${data.order_id} placed successfully!`, 'success');
+
+        if (confirm('Would you like to leave a review or report an issue for this order?')) {
+            openFeedbackModal(data.order_id, 'review');
+        }
         return true;
     } catch (error) {
         console.error('Place order error:', error);
         if (typeof showToast === 'function') showToast('Checkout failed. Please try again.', 'error'); else showMessage('Checkout failed. Please try again.', 'error');
         return false;
+    }
+}
+
+function openFeedbackModal(orderId, defaultType = 'review') {
+    const existing = document.getElementById('feedbackModal');
+    if (existing) existing.remove();
+
+    const modal = document.createElement('div');
+    modal.className = 'modal';
+    modal.id = 'feedbackModal';
+    modal.innerHTML = `
+        <div class="modal-content">
+            <h3>Order Feedback</h3>
+            <p style="color: #7f8c8d; margin-bottom: 1rem;">Order #${orderId}</p>
+            <form id="feedbackForm">
+                <input type="hidden" id="feedbackOrderId" value="${orderId}">
+                <div class="form-group">
+                    <label for="feedbackType">Feedback Type</label>
+                    <select id="feedbackType" class="form-control">
+                        <option value="review">Review</option>
+                        <option value="complaint">Complaint</option>
+                    </select>
+                </div>
+                <div class="form-group" id="feedbackRatingGroup">
+                    <label for="feedbackRating">Rating</label>
+                    <select id="feedbackRating" class="form-control">
+                        <option value="5">5 - Excellent</option>
+                        <option value="4">4 - Good</option>
+                        <option value="3">3 - Okay</option>
+                        <option value="2">2 - Poor</option>
+                        <option value="1">1 - Bad</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="feedbackMessage">Message</label>
+                    <textarea id="feedbackMessage" placeholder="Share your experience or issue" required></textarea>
+                </div>
+                <div class="feedback-actions">
+                    <button type="submit" class="btn-primary">Submit</button>
+                    <button type="button" class="btn-secondary" onclick="closeFeedbackModal()">Cancel</button>
+                </div>
+            </form>
+        </div>
+    `;
+
+    document.body.appendChild(modal);
+
+    const typeSelect = modal.querySelector('#feedbackType');
+    typeSelect.value = defaultType;
+    toggleRatingField(typeSelect.value);
+
+    typeSelect.addEventListener('change', event => {
+        toggleRatingField(event.target.value);
+    });
+
+    modal.querySelector('#feedbackForm').addEventListener('submit', event => {
+        event.preventDefault();
+        submitFeedback();
+    });
+}
+
+function toggleRatingField(type) {
+    const ratingGroup = document.getElementById('feedbackRatingGroup');
+    if (!ratingGroup) return;
+
+    ratingGroup.style.display = type === 'review' ? 'block' : 'none';
+}
+
+function closeFeedbackModal() {
+    const modal = document.getElementById('feedbackModal');
+    if (modal) modal.remove();
+}
+
+async function submitFeedback() {
+    const orderId = Number(document.getElementById('feedbackOrderId').value || 0);
+    const type = document.getElementById('feedbackType').value;
+    const ratingValue = document.getElementById('feedbackRating').value;
+    const message = document.getElementById('feedbackMessage').value.trim();
+
+    if (!orderId || !type) {
+        if (typeof showToast === 'function') showToast('Order information missing', 'error'); else showMessage('Order information missing', 'error');
+        return;
+    }
+
+    if (message === '') {
+        if (typeof showToast === 'function') showToast('Please add a message', 'info'); else showMessage('Please add a message', 'info');
+        return;
+    }
+
+    const payload = {
+        order_id: orderId,
+        feedback_type: type,
+        message: message
+    };
+
+    if (type === 'review') {
+        payload.rating = Number(ratingValue || 0);
+    }
+
+    try {
+        const response = await fetch(`${ORDER_API_URL}?action=submit-feedback`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            credentials: 'include',
+            body: JSON.stringify(payload)
+        });
+
+        const data = await response.json();
+
+        if (!data.success) {
+            if (typeof showToast === 'function') showToast(data.message || 'Unable to submit feedback', 'error'); else showMessage(data.message || 'Unable to submit feedback', 'error');
+            return;
+        }
+
+        if (typeof showToast === 'function') showToast('Feedback submitted. Thank you!', 'success'); else showMessage('Feedback submitted. Thank you!', 'success');
+        closeFeedbackModal();
+    } catch (error) {
+        console.error('Submit feedback error:', error);
+        if (typeof showToast === 'function') showToast('Unable to submit feedback', 'error'); else showMessage('Unable to submit feedback', 'error');
     }
 }
 
@@ -172,7 +307,7 @@ async function loadAdminDashboard() {
         if (statsContainer && data.stats) {
             statsContainer.innerHTML = `
                 <div class="stat-card"><h3>Total Orders</h3><div class="stat-value">${data.stats.totalOrders}</div></div>
-                <div class="stat-card"><h3>Total Revenue</h3><div class="stat-value">₹${formatOrderMoney(data.stats.totalRevenue)}</div></div>
+                <div class="stat-card"><h3>Total Revenue</h3><div class="stat-value">NPR ${formatOrderMoney(data.stats.totalRevenue)}</div></div>
                 <div class="stat-card"><h3>Pending Orders</h3><div class="stat-value">${data.stats.pendingOrders}</div></div>
                 <div class="stat-card"><h3>Completed Orders</h3><div class="stat-value">${data.stats.completedOrders}</div></div>
                 <div class="stat-card"><h3>Total Users</h3><div class="stat-value">${data.stats.totalUsers}</div></div>

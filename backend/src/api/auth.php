@@ -25,18 +25,23 @@ if (session_status() === PHP_SESSION_NONE) {
 
 require_once __DIR__ . '/../util/Database.php';
 
-$database = new Database();
-$database->connect();
-
 $request = isset($_GET['action']) ? $_GET['action'] : '';
+$database = null;
 
 try {
     switch ($request) {
         case 'login':
+            $database = new Database();
+            $database->connect();
             handleLogin($database);
             break;
         case 'register':
+            $database = new Database();
+            $database->connect();
             handleRegister($database);
+            break;
+        case 'me':
+            handleCurrentUser();
             break;
         case 'logout':
             handleLogout();
@@ -50,7 +55,9 @@ try {
     echo json_encode(['success' => false, 'message' => $e->getMessage()]);
 }
 
-$database->close();
+if ($database) {
+    $database->close();
+}
 
 /**
  * Handle user login
@@ -200,4 +207,25 @@ function handleLogout() {
     $_SESSION = [];
     session_destroy();
     echo json_encode(['success' => true, 'message' => 'Logged out successfully']);
+}
+
+/**
+ * Return the current session user for frontend route protection.
+ */
+function handleCurrentUser() {
+    if (!isset($_SESSION['user_id'])) {
+        http_response_code(401);
+        echo json_encode(['success' => false, 'message' => 'Not authenticated']);
+        return;
+    }
+
+    echo json_encode([
+        'success' => true,
+        'user' => [
+            'id' => $_SESSION['user_id'],
+            'email' => $_SESSION['user_email'] ?? '',
+            'full_name' => $_SESSION['user_name'] ?? '',
+            'role' => $_SESSION['user_role'] ?? 'customer'
+        ]
+    ]);
 }

@@ -29,6 +29,10 @@ if ($action === 'get-all') {
     getSingleProduct();
 } elseif ($action === 'search') {
     searchProducts();
+} elseif ($action === 'cart-history') {
+    saveCartHistory();
+} elseif ($action === 'recommendations') {
+    getCustomerRecommendations();
 } else {
     echo json_encode(['success' => false, 'message' => 'Invalid action']);
 }
@@ -69,25 +73,7 @@ function getAllProducts() {
         LIMIT 50
     ");
     
-    $products = [];
-    if (is_array($result)) {
-        foreach ($result as $product) {
-            $images = !empty($product['image_paths']) ? explode('|', $product['image_paths']) : [];
-            $products[] = [
-                'id' => (int)$product['id'],
-                'name' => $product['name'],
-                'description' => $product['description'],
-                'price' => $product['price'],
-                'wholesale_price' => $product['wholesale_price'] !== null ? (float)$product['wholesale_price'] : null,
-                'min_wholesale_qty' => $product['min_wholesale_qty'] !== null ? (int)$product['min_wholesale_qty'] : null,
-                'stock' => (int)$product['stock'],
-                'seller_name' => $product['seller_name'] ?? 'Unknown',
-                'image_count' => (int)($product['image_count'] ?? 0),
-                'image_paths' => $images,
-                'primary_image' => count($images) > 0 ? $images[0] : null
-            ];
-        }
-    }
+    $products = formatProductRows(is_array($result) ? $result : []);
     
     echo json_encode(['success' => true, 'products' => $products, 'total' => count($products)]);
 }
@@ -220,23 +206,12 @@ function searchProducts() {
     $stmt->execute();
     $result = $stmt->get_result();
 
-    $products = [];
+    $rows = [];
     while ($product = $result->fetch_assoc()) {
-        $images = !empty($product['image_paths']) ? explode('|', $product['image_paths']) : [];
-        $products[] = [
-            'id' => (int) $product['id'],
-            'name' => $product['name'],
-            'description' => $product['description'],
-            'price' => $product['price'],
-            'wholesale_price' => $product['wholesale_price'] !== null ? (float)$product['wholesale_price'] : null,
-            'min_wholesale_qty' => $product['min_wholesale_qty'] !== null ? (int)$product['min_wholesale_qty'] : null,
-            'stock' => (int) $product['stock'],
-            'seller_name' => $product['seller_name'] ?? 'Unknown',
-            'image_count' => (int) ($product['image_count'] ?? 0),
-            'image_paths' => $images,
-            'primary_image' => count($images) > 0 ? $images[0] : null
-        ];
+        $rows[] = $product;
     }
+
+    $products = formatProductRows($rows);
 
     $stmt->close();
 
@@ -246,6 +221,364 @@ function searchProducts() {
         'total' => count($products),
         'query' => $query
     ]);
+}
+
+/**
+ * Customer-specific dynamic product sections based on previous checked-out carts.
+ */
+function getCustomerRecommendations() {
+    if (!isset($_SESSION['user_id'])) {
+        http_response_code(401);
+        echo json_encode(['success' => false, 'message' => 'Not authenticated']);
+        return;
+    }
+
+    $currentUserRole = $_SESSION['user_role'] ?? '';
+    if ($currentUserRole !== 'customer') {
+        echo json_encode([
+            'success' => true,
+            'has_history' => false,
+            'buy_again' => [],
+            'recommended' => [],
+            'trending' => []
+        ]);
+        return;
+    }
+
+    $db = new Database();
+    $connection = $db->connect();
+    ensureProductModerationColumn($db);
+    $userId = (int)$_SESSION['user_id'];
+
+    $cartHistory = isset($_SESSION['cart_history']) && is_array($_SESSION['cart_history'])
+        ? $_SESSION['cart_history']
+        : [];
+    $cartProductIds = extractCartProductIds($cartHistory);
+
+    $buyAgain = [];
+    $recommended = [];
+
+    if (!empty($cartProductIds)) {
+        $idList = buildIdList($cartProductIds);
+        $buyAgain = fetchProductRows($connection, "
+            SELECT
+                p.product_id AS id,
+                p.name,
+                p.description,
+                p.price,
+                p.wholesale_price,
+                p.min_wholesale_qty,
+                p.stock,
+                u.full_name AS seller_name,
+                COUNT(pi.image_id) AS image_count,
+                GROUP_CONCAT(pi.image_path SEPARATOR '|') AS image_paths
+            FROM products p
+            LEFT JOIN users u ON p.seller_id = u.id
+            LEFT JOIN product_images pi ON pi.product_id = p.product_id
+            WHERE p.product_status = 'approved'
+              AND p.stock > 0
+              AND p.product_id IN ($idList)
+            GROUP BY p.product_id
+            ORDER BY FIELD(p.product_id, $idList)
+            LIMIT 6
+        ");
+
+        $historySellerIds = fetchSellerIdsForProducts($connection, $cartProductIds);
+        if (!empty($historySellerIds)) {
+            $sellerList = buildIdList($historySellerIds);
+            $recommended = fetchProductRows($connection, "
+                SELECT
+                    p.product_id AS id,
+                    p.name,
+                    p.description,
+                    p.price,
+                    p.wholesale_price,
+                    p.min_wholesale_qty,
+                    p.stock,
+                    u.full_name AS seller_name,
+                    COUNT(pi.image_id) AS image_count,
+                    GROUP_CONCAT(pi.image_path SEPARATOR '|') AS image_paths,
+                    COUNT(DISTINCT oi2.order_item_id) AS popularity_score
+                FROM products p
+                LEFT JOIN users u ON p.seller_id = u.id
+                LEFT JOIN product_images pi ON pi.product_id = p.product_id
+                LEFT JOIN order_items oi2 ON oi2.product_id = p.product_id
+                WHERE p.product_status = 'approved'
+                  AND p.stock > 0
+                  AND p.seller_id IN ($sellerList)
+                  AND p.product_id NOT IN ($idList)
+                GROUP BY p.product_id
+                ORDER BY popularity_score DESC, p.created_at DESC
+                LIMIT 8
+            ");
+        }
+    } else {
+        $buyAgain = fetchProductRows($connection, "
+            SELECT
+                p.product_id AS id,
+                p.name,
+                p.description,
+                p.price,
+                p.wholesale_price,
+                p.min_wholesale_qty,
+                p.stock,
+                u.full_name AS seller_name,
+                COUNT(pi.image_id) AS image_count,
+                GROUP_CONCAT(pi.image_path SEPARATOR '|') AS image_paths,
+                SUM(oi.quantity) AS purchased_quantity,
+                COUNT(DISTINCT o.order_id) AS order_count,
+                MAX(o.created_at) AS last_purchased_at
+            FROM orders o
+            INNER JOIN order_items oi ON oi.order_id = o.order_id
+            INNER JOIN products p ON p.product_id = oi.product_id
+            LEFT JOIN users u ON p.seller_id = u.id
+            LEFT JOIN product_images pi ON pi.product_id = p.product_id
+            WHERE o.user_id = ? AND p.product_status = 'approved' AND p.stock > 0
+            GROUP BY p.product_id
+            ORDER BY last_purchased_at DESC, purchased_quantity DESC
+            LIMIT 6
+        ", $userId);
+
+        $recommended = fetchProductRows($connection, "
+            SELECT
+                p.product_id AS id,
+                p.name,
+                p.description,
+                p.price,
+                p.wholesale_price,
+                p.min_wholesale_qty,
+                p.stock,
+                u.full_name AS seller_name,
+                COUNT(pi.image_id) AS image_count,
+                GROUP_CONCAT(pi.image_path SEPARATOR '|') AS image_paths,
+                COUNT(DISTINCT oi2.order_item_id) AS popularity_score
+            FROM products p
+            LEFT JOIN users u ON p.seller_id = u.id
+            LEFT JOIN product_images pi ON pi.product_id = p.product_id
+            LEFT JOIN order_items oi2 ON oi2.product_id = p.product_id
+            WHERE p.product_status = 'approved'
+              AND p.stock > 0
+              AND p.product_id NOT IN (
+                  SELECT oi.product_id
+                  FROM orders o
+                  INNER JOIN order_items oi ON oi.order_id = o.order_id
+                  WHERE o.user_id = ?
+              )
+              AND p.seller_id IN (
+                  SELECT DISTINCT p2.seller_id
+                  FROM orders o
+                  INNER JOIN order_items oi ON oi.order_id = o.order_id
+                  INNER JOIN products p2 ON p2.product_id = oi.product_id
+                  WHERE o.user_id = ?
+              )
+            GROUP BY p.product_id
+            ORDER BY popularity_score DESC, p.created_at DESC
+            LIMIT 8
+        ", $userId, $userId);
+    }
+
+    $trending = fetchProductRows($connection, "
+        SELECT
+            p.product_id AS id,
+            p.name,
+            p.description,
+            p.price,
+            p.wholesale_price,
+            p.min_wholesale_qty,
+            p.stock,
+            u.full_name AS seller_name,
+            COUNT(pi.image_id) AS image_count,
+            GROUP_CONCAT(pi.image_path SEPARATOR '|') AS image_paths,
+            COALESCE(SUM(oi.quantity), 0) AS sold_quantity
+        FROM products p
+        LEFT JOIN users u ON p.seller_id = u.id
+        LEFT JOIN product_images pi ON pi.product_id = p.product_id
+        LEFT JOIN order_items oi ON oi.product_id = p.product_id
+        LEFT JOIN orders o ON o.order_id = oi.order_id AND o.status = 'completed'
+        WHERE p.product_status = 'approved' AND p.stock > 0
+        GROUP BY p.product_id
+        ORDER BY sold_quantity DESC, p.created_at DESC
+        LIMIT 8
+    ");
+
+    $db->close();
+
+    echo json_encode([
+        'success' => true,
+        'has_history' => count($buyAgain) > 0 || !empty($cartProductIds),
+        'buy_again' => $buyAgain,
+        'recommended' => $recommended,
+        'trending' => $trending
+    ]);
+}
+
+/**
+ * Save cart history in session for customer personalization.
+ */
+function saveCartHistory() {
+    if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+        http_response_code(405);
+        echo json_encode(['success' => false, 'message' => 'Method not allowed']);
+        return;
+    }
+
+    if (!isset($_SESSION['user_id'])) {
+        http_response_code(401);
+        echo json_encode(['success' => false, 'message' => 'Not authenticated']);
+        return;
+    }
+
+    $currentUserRole = $_SESSION['user_role'] ?? '';
+    if ($currentUserRole !== 'customer') {
+        echo json_encode(['success' => true, 'message' => 'No cart history for non-customer users']);
+        return;
+    }
+
+    $payload = json_decode(file_get_contents('php://input'), true);
+    $items = $payload['items'] ?? [];
+    if (!is_array($items)) {
+        $items = [];
+    }
+
+    $_SESSION['cart_history'] = normalizeCartHistoryItems($items);
+
+    echo json_encode([
+        'success' => true,
+        'count' => count($_SESSION['cart_history'])
+    ]);
+}
+
+function fetchProductRows($connection, $sql, ...$params) {
+    $stmt = $connection->prepare($sql);
+    if (!$stmt) {
+        return [];
+    }
+
+    if (count($params) > 0) {
+        $types = str_repeat('i', count($params));
+        $stmt->bind_param($types, ...$params);
+    }
+
+    $stmt->execute();
+    $result = $stmt->get_result();
+    $rows = [];
+
+    while ($row = $result->fetch_assoc()) {
+        $rows[] = $row;
+    }
+
+    $stmt->close();
+    return formatProductRows($rows);
+}
+
+function formatProductRows($rows) {
+    $products = [];
+
+    foreach ($rows as $product) {
+        $images = !empty($product['image_paths']) ? explode('|', $product['image_paths']) : [];
+        $formatted = [
+            'id' => (int)$product['id'],
+            'name' => $product['name'],
+            'description' => $product['description'],
+            'price' => $product['price'],
+            'wholesale_price' => $product['wholesale_price'] !== null ? (float)$product['wholesale_price'] : null,
+            'min_wholesale_qty' => $product['min_wholesale_qty'] !== null ? (int)$product['min_wholesale_qty'] : null,
+            'stock' => (int)$product['stock'],
+            'seller_name' => $product['seller_name'] ?? 'Unknown',
+            'image_count' => (int)($product['image_count'] ?? 0),
+            'image_paths' => $images,
+            'primary_image' => count($images) > 0 ? $images[0] : null
+        ];
+
+        foreach (['purchased_quantity', 'order_count', 'last_purchased_at', 'popularity_score', 'sold_quantity'] as $metaKey) {
+            if (array_key_exists($metaKey, $product)) {
+                $formatted[$metaKey] = is_numeric($product[$metaKey]) ? (float)$product[$metaKey] : $product[$metaKey];
+            }
+        }
+
+        $products[] = $formatted;
+    }
+
+    return $products;
+}
+
+function normalizeCartHistoryItems($items) {
+    $normalized = [];
+
+    foreach ($items as $item) {
+        $productId = (int)($item['productId'] ?? 0);
+        if ($productId <= 0) {
+            continue;
+        }
+
+        $quantity = (int)($item['quantity'] ?? 1);
+        if ($quantity <= 0) {
+            $quantity = 1;
+        }
+
+        $purchaseType = ($item['purchaseType'] ?? 'retail') === 'wholesale' ? 'wholesale' : 'retail';
+        $key = $productId . '-' . $purchaseType;
+
+        if (!isset($normalized[$key])) {
+            $normalized[$key] = [
+                'product_id' => $productId,
+                'quantity' => $quantity,
+                'purchase_type' => $purchaseType,
+                'updated_at' => time()
+            ];
+        } else {
+            $normalized[$key]['quantity'] += $quantity;
+            $normalized[$key]['updated_at'] = time();
+        }
+    }
+
+    $values = array_values($normalized);
+    usort($values, function ($a, $b) {
+        return ($b['updated_at'] ?? 0) <=> ($a['updated_at'] ?? 0);
+    });
+
+    return array_slice($values, 0, 30);
+}
+
+function extractCartProductIds($cartHistory) {
+    $ids = [];
+    foreach ($cartHistory as $item) {
+        $productId = (int)($item['product_id'] ?? 0);
+        if ($productId > 0) {
+            $ids[] = $productId;
+        }
+    }
+    return array_values(array_unique($ids));
+}
+
+function buildIdList($ids) {
+    $clean = array_values(array_unique(array_map('intval', $ids)));
+    if (empty($clean)) {
+        return '0';
+    }
+    return implode(',', $clean);
+}
+
+function fetchSellerIdsForProducts($connection, $productIds) {
+    $idList = buildIdList($productIds);
+    if ($idList === '0') {
+        return [];
+    }
+
+    $result = $connection->query("SELECT DISTINCT seller_id FROM products WHERE product_id IN ($idList)");
+    if (!$result) {
+        return [];
+    }
+
+    $sellerIds = [];
+    while ($row = $result->fetch_assoc()) {
+        $sellerId = (int)($row['seller_id'] ?? 0);
+        if ($sellerId > 0) {
+            $sellerIds[] = $sellerId;
+        }
+    }
+
+    return array_values(array_unique($sellerIds));
 }
 
 function ensureProductModerationColumn($db) {

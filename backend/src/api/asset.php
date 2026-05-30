@@ -64,28 +64,37 @@ function getMimeTypeForFile($filePath) {
 
 function resolveAssetFilePath($assetPath) {
     $normalizedPath = normalizeAssetPath($assetPath);
-    $candidates = [];
 
-    if (preg_match('/^[A-Za-z]:\//', $normalizedPath) || str_starts_with($normalizedPath, '/')) {
-        $candidates[] = $normalizedPath;
-    } else {
-        $candidates[] = __DIR__ . '/../../' . $normalizedPath;
-        $candidates[] = __DIR__ . '/../' . $normalizedPath;
-
-        if (str_starts_with($normalizedPath, 'uploads/')) {
-            $suffix = substr($normalizedPath, strlen('uploads/'));
-            $candidates[] = __DIR__ . '/../../uploads/' . $suffix;
-            $candidates[] = __DIR__ . '/../uploads/' . $suffix;
-        }
+    if (
+        preg_match('/^[A-Za-z]:\//', $normalizedPath) ||
+        str_starts_with($normalizedPath, '/') ||
+        str_contains($normalizedPath, '../')
+    ) {
+        return null;
     }
 
-    foreach ($candidates as $candidate) {
-        if (is_file($candidate)) {
-            return $candidate;
-        }
+    if (str_starts_with($normalizedPath, 'uploads/')) {
+        $normalizedPath = substr($normalizedPath, strlen('uploads/'));
     }
 
-    return null;
+    $uploadsRoot = realpath(__DIR__ . '/../../uploads');
+    if (!$uploadsRoot) {
+        return null;
+    }
+
+    $candidate = $uploadsRoot . DIRECTORY_SEPARATOR . str_replace('/', DIRECTORY_SEPARATOR, $normalizedPath);
+    $filePath = realpath($candidate);
+
+    if (!$filePath || !is_file($filePath)) {
+        return null;
+    }
+
+    $uploadsRootWithSeparator = rtrim($uploadsRoot, DIRECTORY_SEPARATOR) . DIRECTORY_SEPARATOR;
+    if (!str_starts_with($filePath, $uploadsRootWithSeparator)) {
+        return null;
+    }
+
+    return $filePath;
 }
 
 $filePath = resolveAssetFilePath($assetPath);
